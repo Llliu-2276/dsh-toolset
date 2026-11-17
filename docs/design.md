@@ -109,6 +109,12 @@ CORE 17 个（硬编码，不可增删）：
 
 **配色**：所有颜色取自宿主 design token（`--dsw-*`），浅色与深色共用同一套规则；不写死颜色、不用不存在的变量名配白色兜底（见 D34）。
 
+**高度与滚动**（见 D35）：宿主把设置分区塞进一个固定高度的面板，面板会把超出自身底边的内容**直接裁掉**，且插件拿不到该面板的高度（宿主样式是 hash 类名的 CSS-in-JS，静态不可达）。所以整页自己限高、自己滚：
+
+- `.dswb-page`：`display:flex; flex-direction:column`，`max-height:100%`，`height:100%`，`max-height:min(100%, calc(100dvh - 260px))` 作为兜底，`overflow-y:auto`，底部内边距 28px。这样无论宿主给多高，页面都不会把底部内边距和最后一张卡片挤出可视区。
+- 两个区块是 `.dswb-group`（`display:flex; flex-direction:column; min-height:0`）：工作台行 `flex:0 0 auto` 不收缩；工具区块 `flex:0 1 auto` 先收缩，其中的 `.dswb-toolsBox` 再 `flex:1 1 auto; min-height:120px; max-height:440px` 自己竖向滚动。空间再不够时整页滚动（`overscroll-behavior:contain`，滚到底不把滚动传给外层对话框）。
+- 直接子元素一律 `flex:none`，避免默认 `min-height:auto` 让内容撑破容器；**可收缩性必须写在真正承载工具盒的那个 section 上**，写在 `.dswb-toolsBox` 上无效（它不是 `.dswb-page` 的直接子元素）。
+
 ### 3.4 模型申请工具
 
 **触发**：模型调用 `request_tool({ tool, reason })`。

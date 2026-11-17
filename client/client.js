@@ -178,7 +178,17 @@ window.__ModuleLoader__.load({
   font-size:12px;font-weight:500;white-space:nowrap;}
 .dswb-tag[data-frozen="true"]{color:var(--dsw-alias-state-success-primary);}
 .dswb-tagCount{opacity:.75;}
-.dswb-page{display:flex;flex-direction:column;gap:18px;padding:4px 2px 28px;max-width:860px;color:var(--dsw-alias-label-primary);}
+.dswb-page{display:flex;flex-direction:column;gap:18px;padding:4px 2px 28px;box-sizing:border-box;max-width:860px;
+  min-height:0;max-height:100%;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;
+  color:var(--dsw-alias-label-primary);}
+.dswb-page>*{flex:none;}
+.dswb-group{display:flex;flex-direction:column;gap:6px;min-height:0;}
+.dswb-page>.dswb-groupBoard{flex:0 0 auto;}
+.dswb-page>.dswb-groupTools{flex:0 1 auto;}
+/* The settings surface clips whatever sticks out past its own bottom edge, so
+   the page caps itself at the panel height, and at the viewport when the panel
+   gives it no resolved height, and scrolls instead of being cut off. */
+.dswb-page{height:100%;max-height:min(100%,calc(100dvh - 260px));}
 .dswb-title{font-size:15px;font-weight:600;margin:0;}
 .dswb-sectionTitle{display:flex;align-items:baseline;gap:8px;margin:0;}
 .dswb-desc{margin:0;color:var(--dsw-alias-label-tertiary);font-size:12.5px;line-height:1.55;}
@@ -218,9 +228,10 @@ window.__ModuleLoader__.load({
 .dswb-add:hover{border-color:var(--dsw-alias-state-business-primary);color:var(--dsw-alias-label-primary);
   background:var(--dsw-alias-interactive-bg-hover);}
 .dswb-add[disabled]{opacity:.5;cursor:default;}
-.dswb-toolsBox{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:var(--dsw-radius-md,12px);
-  border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);
-  max-height:440px;overflow-y:auto;scrollbar-width:thin;}
+.dswb-toolsBox{display:flex;flex-direction:column;gap:8px;padding:10px;box-sizing:border-box;
+  border-radius:var(--dsw-radius-md,12px);border:1px solid var(--dsw-alias-border-l1);
+  background:var(--dsw-alias-bg-layer-1);
+  flex:1 1 auto;min-height:120px;max-height:440px;overflow-y:auto;scrollbar-width:thin;}
 .dswb-toolCard{display:flex;align-items:flex-start;gap:10px;padding:9px 11px;box-sizing:border-box;
   border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-sm,8px);
   background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);
@@ -984,7 +995,7 @@ window.__ModuleLoader__.load({
         error !== null ? h("div", { className: "dswb-error" }, error) : null,
         h(
           "section",
-          { style: { display: "flex", flexDirection: "column", gap: 6 } },
+          { className: "dswb-group dswb-groupBoard" },
           h("h3", { className: "dswb-sectionTitle dswb-title", style: { fontSize: 13 } }, tr("board.title")),
           h("p", { className: "dswb-desc" }, tr("board.hint")),
           h(
@@ -1037,7 +1048,7 @@ window.__ModuleLoader__.load({
         ),
         h(
           "section",
-          { style: { display: "flex", flexDirection: "column", gap: 6 } },
+          { className: "dswb-group dswb-groupTools" },
           h(
             "h3",
             { className: "dswb-sectionTitle dswb-title", style: { fontSize: 13 } },

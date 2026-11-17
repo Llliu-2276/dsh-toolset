@@ -74,7 +74,7 @@ dsh plugin --profile <profile> add <本仓库路径或包名>
 仓库不引入构建步骤：host 是纯 ESM，`main` 直接指向 `src/index.js`；客户端 `client/client.js` 是手写浏览器模块（`window.__ModuleLoader__.load`）。
 
 ```powershell
-node --test            # 单元测试（35 个用例）
+node --test            # 单元测试（71 个用例）
 node scripts/e2e/run.mjs   # 端到端：真实 headless 会话 + mock 模型，断言请求体
 ```
 
@@ -97,4 +97,4 @@ docs/         design.md（设计）、plan.md（进度与实测）、DECISIONS.m
 
 ## 状态
 
-host 与客户端 UI 都已实现：host 通过 35 个单测与 15 项端到端断言；设置页重做为卡片式布局（工作台卡片行 + 工具卡片列表 + 拖动排序 + 新建/编辑弹窗），配色全部改用宿主 `--dsw-*` design token，浅色深色同一套样式。尚未做的：真实账号下的缓存命中测量、子代理端到端断言。详见 `docs/plan.md`。
+host 与客户端 UI 都已实现：host 通过 71 个单测与 15 项端到端断言；设置页是卡片式布局（工作台卡片行 + 工具卡片列表 + 拖动排序 + 新建/编辑弹窗），配色全部改用宿主 `--dsw-*` design token，浅色深色同一套样式，整页自己限高与滚动，所以底部留白不会被宿主面板裁掉。尚未做的：真实账号下的缓存命中测量、子代理端到端断言、真实界面里的鼠标拖动操作。详见 `docs/plan.md`。

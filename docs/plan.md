@@ -52,13 +52,18 @@
 | `src/http.js` | `/dsh-toolset/api` 前缀路由：`GET /state`、`GET /tools` 与七个写路由；`requestRejection` 鉴权失败返回 403；写操作在 degraded 时 409 |
 | `src/index.js` | `name`/`inject`/`apply()`：装配服务、投影、目录、申请工具、命令、HTTP 路由、`agent/created`、`session/event` 挂接 |
 
-单元测试（`node --test`，30 个用例）：
+单元测试（`node --test`，71 个用例）：
 
-- `test/config.test.js`：默认配置、读写往返、损坏文件降级、原子写与 `.bak`、版本与字段校验、名称长度。
-- `test/store.test.js`：创建/更新（名称与介绍）/重命名/删除、重名拒绝、超长介绍拒绝、全局与普通工作台互斥、`reorderBenches` 全量校验、`reorderTools` 去重、`setTools` 去重、`lastSelected`、`resolve()` 快照、删除后的 `deleted`（35 个用例）。
+- `test/config.test.js`（11 个）：默认配置、读写往返、损坏文件降级、原子写与 `.bak`、版本与字段校验、名称长度、介绍长度、`toolOrder`。
+- `test/store.test.js`：创建/更新（名称与介绍）/重命名/删除、重名拒绝、超长介绍拒绝、全局与普通工作台互斥、`reorderBenches` 全量校验、`reorderTools` 去重、`setTools` 去重、`lastSelected`、`resolve()` 快照、删除后的 `deleted`。
 - `test/catalog.test.js`：首句截断、80 字上限、归属标签（全局/工作台/未分类）、空目录。
 - `test/projection.test.js`：未选过的会话回落到 `lastSelected`、主动选「无工作台」保持空、frozen 覆盖回落、删除后的 `deleted`。
-- `test/mask.test.js`：挂载已有会话不立即掩码、选择工作台不立即掩码、`turn/start` 才按「核心 ∪ 工作台 ∪ `request_tool`」施加、可见集为空或只剩 `request_tool` 时整体跳过（这条守的是桌面端那次 `400 INVALID_REQUEST: tools: at least one tool must have defer_loading=false`）。
+- `test/mask.test.js`：挂载已有会话不立即掩码、选择工作台不立即掩码、`turn/start` 才按「核心 ∪ 工作台 ∪ `request_tool`」施加、可见集为空或只剩 `request_tool` 时整体跳过（这条守的是桌面端那次 `400 INVALID_REQUEST: tools: at least one tool must have defer_loading=false`）；grant 当轮放行、`turn/end` 收回、`turn/end` 缺席时下一轮 `turn/start` 再兜一次、未知会话 grant 返回 false、子代理继承父内存态与继承 frozen 记录。
+- `test/http.test.js`（9 个）：`/state` 形状、`/tools` 的来源标签（builtin / plugin / mcp）、建台带介绍、畸形请求体一律 400 且**不改动**已存的工具表、`/bench/reorder` 必须是全量排列、`/tools/reorder` 去重、`/select` 缺会话或非字符串 id、degraded 下写 409 读 200、未知路由 404 / 错方法 405、鉴权失败 403。
+- `test/session.test.js`（5 个）：事件扫描取最后一次 selected/frozen、忽略无关事件、记录器写出的数据能被扫描器读回、快照不可被外部改动、缺字段归一。
+- `test/request-tool.test.js`（5 个）：批准一次并 grant、拒绝文案、审批抛错文案、未知/已可见/空名字、grant 失败提示。
+- `test/command.test.js`（6 个）：列表与当前标记、空配置、已开始、按名字与按 id 选择、未知名字与抛错、degraded 警告。
+- `test/service.test.js` / `test/index.test.js`：服务层转发与模块契约（`name`、`inject`、`apply`）；这两组需要宿主的 peer 包，裸检出时自动跳过。
 
 ## 3. 端到端验证（已完成）
 
@@ -98,7 +103,7 @@
 
 - **读**：会话投影走插槽 props 里的 `useProjection("workbench")`（`{benchId,name,started,core,global,bench,deleted}`）；设置页走 `GET /dsh-toolset/api/state` 与 `GET /dsh-toolset/api/tools`。
 - **写**：`POST /dsh-toolset/api/select`（`{sessionId,benchId}` → `engine.select`）、`/bench`（`{name,description}`）、`/bench/update`（`{id,name,description}`）、`/bench/remove`、`/bench/tools`、`/bench/reorder`（`{ids}` 必须是全部工作台的排列）、`/global`、`/tools/reorder`（`{names}`）；每个写路由都回同一份扁平 state（`global` 是字符串数组，另有 `toolOrder`）。`/tools` 每项带 `{name, description, source}`，`source` 是尽力而为的来源标签（`mcp`/`builtin`/`plugin`，见 D33）。
-- **鉴权**：handler 里 `ctx.connection.requestRejection(req) !== undefined` → 403；浏览器同源 `fetch` 自带 cookie，客户端不传任何 header。路由用 `ctx.inject(["webServer","connection"], scope => scope.effect(…))` 注册，headless 没有 `webServer` 时这段不加载。
+- **鉴权与校验**：handler 里 `ctx.connection.requestRejection(req) !== undefined` → 403；浏览器同源 `fetch` 自带 cookie，客户端不传任何 header。请求体校验是严格的：缺失或类型不对的字段一律 400，**不会**把畸形值降级成空数组（否则一次坏请求就能清空工具表）。路由用 `ctx.inject(["webServer","connection"], scope => scope.effect(…))` 注册，headless 没有 `webServer` 时这段不加载。
 - **工具清单**：插件根 `ctx.tools.view()` 只看得到自己这一层，`toolCatalog()` 对 `ctx.agents.list()` 逐个 `ctx.tools.view(agent)` 取并集、再并根视图兜底；实测 34 个工具（含 `request_tool`）。
 - **不用 `session.command` 承载数据**：命令结果只有 `{kind,text}`，读不到结构化返回；选中工作台直接走 `/select`。
 
@@ -120,8 +125,9 @@ desktop 安装暴露出一个 host 侧时序 bug（已修，见 `design.md` §5.
 2. **jsdom 渲染冒烟**（`tmp/preview.mjs`）：用假的 `window.__ModuleLoader__` 加载真实 `client.js`，桩掉 `ctx.slots` 与 `fetch` 提供 `state`/`tools` 夹具，`createRoot` 渲染设置页 → 18.8 KB DOM、工作台卡片与工具卡片都在、无抛错。这一步能抓「组件引用了不存在的变量」「props 形状对不上」这类单测与 e2e 都看不到的问题。
 3. **布局与配色实测**（agent-browser 打开生成的两份预览页）：深色下 `body` `rgb(21,21,23)`、卡片 `rgb(35,35,36)`、文字 `rgb(249,250,251)`、次要文字 `rgb(173,178,184)`，与宿主深色 token 一致；`.dswb-row` 只有两个子元素（滚动区 + 新建卡片），新建卡片右边界在滚动区之外（固定）；卡片带 `scrollWidth 848 > clientWidth 742`（确实会横向滚动）；工具卡片宽度一致 838px（一行一个）；`overflow-y: auto`；无横向溢出。
 4. **交互冒烟**（`tmp/interact.mjs`，同一个 jsdom 容器，不让渲染结果只停留在静态快照）：用 DOM 事件驱动真实组件，断言它发出的 HTTP 调用 —— 点未选中的工具卡会 `POST /bench/tools` 且带上该工具；点全局工具卡零请求；拖动工具卡 `POST /tools/reorder` 且顺序反转正确；拖动工作台卡 `POST /bench/reorder` 且第一位移到目标位置；全局卡片 `draggable="false"`；「+」打开弹窗、填名提交 `POST /bench`；删除第一次点击零请求、第二次才 `POST /bench/remove`。12/12 通过。
+5. **面板高度实测**（`tmp/panel-fixture.mjs` 生成四种容器形态的同一页面，agent-browser 量 `getBoundingClientRect`）：宿主设置面板会把超出自身底边的内容直接裁掉，且插件拿不到宿主容器的高度约束（面板样式是 hash 类名的 CSS-in-JS，静态不可达），所以页面必须自己限高。实测 640 高面板下页面高 574、工具盒收到 237、底部内边距 28 完整可见；420 高面板下工具盒降到 120 下限、页面自身滚动、底部仍是 28；无约束容器下页面取 `100dvh - 260px`。修法见 `design.md` §3.3。
 
-截图留在 `tmp/shot-light.png` 与 `tmp/shot-dark.png`（不提交）。三种脚本都只在 `tmp/` 下跑（依赖装在 `%TEMP%\render`），不进仓库——项目本身仍然零依赖、无构建步骤（D29）。
+截图留在 `tmp/shot-light.png` 与 `tmp/shot-dark.png`（不提交）。上述脚本都只在 `tmp/` 下跑（依赖装在 `%TEMP%\render`），不进仓库——项目本身仍然零依赖、无构建步骤（D29）。
 
 ## 5. P3：集成与验收
 
@@ -132,12 +138,12 @@ desktop 安装暴露出一个 host 侧时序 bug（已修，见 `design.md` §5.
 | 1 | 默认值（上次选择 / 无工作台） | ✅ 未选过的会话胶囊显示上次的工作台（投影回落 `lastSelected`）；主动选「无工作台」后保持空 |
 | 2 | 胶囊可选、发出首条消息后禁用、刷新后标签仍在 | ✅ 胶囊选中生效；首条消息后胶囊禁用（不消失）、头部标签出现，刷新后仍在（冻结态由投影承载） |
 | 3 | 请求体只含 CORE ∪ 全局 ∪ 当前工作台 | ✅ e2e 已断言 |
-| 4 | 设置页增删改、互斥、拖动排序、深浅色 | ✅ 卡片式设置页：token 交叉校验 0 缺失、jsdom 渲染冒烟通过、深色下实测配色与布局正确（见 §4.5）；点击增删/锁定不写/拖动 reorder/新建/二次确认删除共 12 项交互在 jsdom 里用真实组件断言过（§4.5 第 4 条）；拖动落盘另有 store 单测（`reorderBenches`/`reorderTools`）；**真实界面的鼠标拖动仍未点过**（预览页不带事件） |
+| 4 | 设置页增删改、互斥、拖动排序、深浅色 | ✅ 卡片式设置页：token 交叉校验 0 缺失、jsdom 渲染冒烟通过、深色下实测配色与布局正确（见 §4.5）；点击增删/锁定不写/拖动 reorder/新建/二次确认删除共 12 项交互在 jsdom 里用真实组件断言过（§4.5 第 4 条）；面板限高与底部留白在四种容器高度下量过（§4.5 第 5 条）；拖动落盘另有 store 单测（`reorderBenches`/`reorderTools`）；**真实界面的鼠标拖动仍未点过**（预览页不带事件） |
 | 5 | 目录正确（名字/用途/归属，有效集不出现） | ✅ e2e + 单测 |
-| 6 | 申请 → 批准 → 本轮可用、轮末收回 | ✅ 批准路径已 e2e；轮末收回只有单测（`onTurnEnd` 清 grants） |
+| 6 | 申请 → 批准 → 本轮可用、轮末收回 | ✅ 批准路径已 e2e；收回有单测（`turn/end` 清 grants），另在 `turn/start` 再清一次，防中断/崩溃导致 `turn/end` 缺席时 grant 漏到下一轮 |
 | 7 | 冻结：改配置不影响已开对话 | ✅ 单测（快照解析与冻结）；会话内改配置未实测 |
 | 8 | 删除工作台：老对话继续可用、标签显示「（已删除）」 | ✅ 投影标 `deleted`、标签显示「（已删除）」；老对话工具集来自 frozen 快照 |
-| 9 | 子代理可用工具与父会话一致 | 代码已实现；端到端未覆盖 |
+| 9 | 子代理可用工具与父会话一致 | 代码已实现（先看父会话内存态，父没有内存态时回落到父会话的 frozen 事件）；端到端未覆盖 |
 | 10 | 不装插件行为不变 | ✅ 对照运行 |
 | 11 | 插件热装到已运行的会话后，第一轮不因空工具集失败 | ✅ desktop 上真实复现过 `400 INVALID_REQUEST: tools: at least one tool must have defer_loading=false`（见 `design.md` §5.2、D31）；改为只在 `turn/start` 掩码后，本轮对话正常 |
 
@@ -172,7 +178,7 @@ desktop 安装暴露出一个 host 侧时序 bug（已修，见 `design.md` §5.
 
 - `src/`：host 实现（12 个模块）
 - `client/client.js`：客户端 UI（三块插槽 + 设置页，手写浏览器模块）
-- `test/`：5 个测试文件，30 个用例
+- `test/`：12 个测试文件，71 个用例
 - `scripts/e2e/`：`run.mjs`、`mock-llm.mjs`、`approver.js`
 - `package.json`、`cordis.patch.yml`、`icon.svg`、`locale/{en,zh}.json`、`.gitignore`
 - `README.md`：定位、安装、配置、开发与状态
