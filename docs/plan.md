@@ -119,8 +119,9 @@ desktop 安装暴露出一个 host 侧时序 bug（已修，见 `design.md` §5.
 1. **Token 交叉校验**（`tmp/check-tokens.mjs`，不进仓库）：从宿主主题包 `dsh-client-ui-theme/lib/client.js` 提取全部 `--dsw-*` 声明（414 个），与客户端 CSS 里 `var(--dsw-*)` 实际读到的 27 个求差集 → 0 个缺失，且 `bg-layer-1/2`、`label-primary`、`menu-surface-fill` 都有 `body[data-ds-dark-theme]` 覆盖。旧版深色白底的根因正是三个**不存在**的 token（`--dsw-alias-bg-elevated` 等）配了 `#fff` 兜底。
 2. **jsdom 渲染冒烟**（`tmp/preview.mjs`）：用假的 `window.__ModuleLoader__` 加载真实 `client.js`，桩掉 `ctx.slots` 与 `fetch` 提供 `state`/`tools` 夹具，`createRoot` 渲染设置页 → 18.8 KB DOM、工作台卡片与工具卡片都在、无抛错。这一步能抓「组件引用了不存在的变量」「props 形状对不上」这类单测与 e2e 都看不到的问题。
 3. **布局与配色实测**（agent-browser 打开生成的两份预览页）：深色下 `body` `rgb(21,21,23)`、卡片 `rgb(35,35,36)`、文字 `rgb(249,250,251)`、次要文字 `rgb(173,178,184)`，与宿主深色 token 一致；`.dswb-row` 只有两个子元素（滚动区 + 新建卡片），新建卡片右边界在滚动区之外（固定）；卡片带 `scrollWidth 848 > clientWidth 742`（确实会横向滚动）；工具卡片宽度一致 838px（一行一个）；`overflow-y: auto`；无横向溢出。
+4. **交互冒烟**（`tmp/interact.mjs`，同一个 jsdom 容器，不让渲染结果只停留在静态快照）：用 DOM 事件驱动真实组件，断言它发出的 HTTP 调用 —— 点未选中的工具卡会 `POST /bench/tools` 且带上该工具；点全局工具卡零请求；拖动工具卡 `POST /tools/reorder` 且顺序反转正确；拖动工作台卡 `POST /bench/reorder` 且第一位移到目标位置；全局卡片 `draggable="false"`；「+」打开弹窗、填名提交 `POST /bench`；删除第一次点击零请求、第二次才 `POST /bench/remove`。12/12 通过。
 
-截图留在 `tmp/shot-light.png` 与 `tmp/shot-dark.png`（不提交）。
+截图留在 `tmp/shot-light.png` 与 `tmp/shot-dark.png`（不提交）。三种脚本都只在 `tmp/` 下跑（依赖装在 `%TEMP%\render`），不进仓库——项目本身仍然零依赖、无构建步骤（D29）。
 
 ## 5. P3：集成与验收
 
@@ -131,7 +132,7 @@ desktop 安装暴露出一个 host 侧时序 bug（已修，见 `design.md` §5.
 | 1 | 默认值（上次选择 / 无工作台） | ✅ 未选过的会话胶囊显示上次的工作台（投影回落 `lastSelected`）；主动选「无工作台」后保持空 |
 | 2 | 胶囊可选、发出首条消息后禁用、刷新后标签仍在 | ✅ 胶囊选中生效；首条消息后胶囊禁用（不消失）、头部标签出现，刷新后仍在（冻结态由投影承载） |
 | 3 | 请求体只含 CORE ∪ 全局 ∪ 当前工作台 | ✅ e2e 已断言 |
-| 4 | 设置页增删改、互斥、拖动排序、深浅色 | ✅ 卡片式设置页：token 交叉校验 0 缺失、jsdom 渲染冒烟通过、深色下实测配色与布局正确（见 §4.5）；新建/改名/两次确认删除/勾选落盘由单测覆盖，拖动排序的落盘由 store 单测覆盖（`reorderBenches`/`reorderTools`）；**拖动交互本身尚未在真实界面里操作过**（预览页是静态快照，不带事件） |
+| 4 | 设置页增删改、互斥、拖动排序、深浅色 | ✅ 卡片式设置页：token 交叉校验 0 缺失、jsdom 渲染冒烟通过、深色下实测配色与布局正确（见 §4.5）；点击增删/锁定不写/拖动 reorder/新建/二次确认删除共 12 项交互在 jsdom 里用真实组件断言过（§4.5 第 4 条）；拖动落盘另有 store 单测（`reorderBenches`/`reorderTools`）；**真实界面的鼠标拖动仍未点过**（预览页不带事件） |
 | 5 | 目录正确（名字/用途/归属，有效集不出现） | ✅ e2e + 单测 |
 | 6 | 申请 → 批准 → 本轮可用、轮末收回 | ✅ 批准路径已 e2e；轮末收回只有单测（`onTurnEnd` 清 grants） |
 | 7 | 冻结：改配置不影响已开对话 | ✅ 单测（快照解析与冻结）；会话内改配置未实测 |
