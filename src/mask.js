@@ -31,14 +31,28 @@ export class MaskEngine {
     return this.states.get(sessionId);
   }
 
-  isStarted(sessionId) {
-    return this.states.get(sessionId)?.started === true;
-  }
-
+  /**
+   * The frozen set a subagent inherits: the parent's live state when this
+   * plugin saw its first turn, else the parent's frozen record from the session
+   * log (a restart mid-conversation leaves no state behind).
+   */
   findInherited(agent) {
     for (const candidate of this.ctx.agents.list()) {
       if (candidate.id === agent.id) continue;
-      if (this.ctx.agents.isOwnedBy(agent.id, candidate)) return this.states.get(candidate.id);
+      if (!this.ctx.agents.isOwnedBy(agent.id, candidate)) continue;
+      const state = this.states.get(candidate.id);
+      if (state?.started) return state;
+      const { frozen } = scanWorkbenchEvents(candidate.session.snapshotEvents());
+      if (frozen) {
+        return {
+          started: true,
+          benchId: frozen.benchId ?? null,
+          name: frozen.name ?? null,
+          core: [...(frozen.core ?? [])],
+          global: [...(frozen.global ?? [])],
+          bench: [...(frozen.bench ?? [])],
+        };
+      }
     }
     return undefined;
   }
@@ -142,6 +156,10 @@ export class MaskEngine {
   onTurnStart(agent) {
     const state = this.states.get(agent.id) ?? this.attach(agent);
     if (!state) return;
+    // A grant only lasts for the turn that asked for it. `turn/end` normally
+    // clears it, but an aborted or crashed turn can start the next one without
+    // that event, so the boundary is enforced here as well.
+    if (state.grants.size > 0) state.grants.clear();
     if (state.started) {
       this.reapply(agent);
       return;

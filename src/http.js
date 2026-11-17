@@ -43,9 +43,25 @@ async function readJson(req) {
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 
-function strings(value) {
-  if (!Array.isArray(value)) return undefined;
-  return value.filter((item) => typeof item === "string");
+function requireString(value, field) {
+  if (typeof value !== "string") throw new Error(`${field} 必须是字符串`);
+  return value;
+}
+
+function optionalString(value, field) {
+  if (value === undefined) return undefined;
+  return requireString(value, field);
+}
+
+/**
+ * Validates a list of names. A non-array must not be coerced to `[]`: that
+ * would turn a malformed request into "clear every tool" instead of an error.
+ */
+function requireStrings(value, field) {
+  if (!Array.isArray(value) || value.some((item) => typeof item !== "string")) {
+    throw new Error(`${field} 必须是字符串数组`);
+  }
+  return value;
 }
 
 function editorState(service) {
@@ -139,44 +155,46 @@ export function registerWorkbenchHttp(ctx, { engine, service }) {
         }
         if (route === "/select") {
           const agent = agentOf(ctx, body.sessionId);
-          const state = engine.select(agent, body.benchId ?? null);
+          const benchId = body.benchId === undefined || body.benchId === null ? null : requireString(body.benchId, "benchId");
+          const state = engine.select(agent, benchId);
           send(res, 200, { benchId: state.benchId, name: state.name, started: state.started });
           return;
         }
         if (route === "/bench") {
-          const name = typeof body.name === "string" ? body.name : "";
-          const description = typeof body.description === "string" ? body.description : "";
-          service.create(name, description);
+          service.create(requireString(body.name ?? "", "name"), optionalString(body.description, "description") ?? "");
           send(res, 200, editorState(service));
           return;
         }
         if (route === "/bench/update") {
-          service.update(body.id, { name: body.name, description: body.description });
+          service.update(body.id, {
+            name: optionalString(body.name, "name"),
+            description: optionalString(body.description, "description"),
+          });
           send(res, 200, editorState(service));
           return;
         }
         if (route === "/bench/remove") {
-          service.remove(body.id);
+          service.remove(requireString(body.id, "id"));
           send(res, 200, editorState(service));
           return;
         }
         if (route === "/bench/reorder") {
-          service.reorderBenches(strings(body.ids) ?? []);
+          service.reorderBenches(requireStrings(body.ids, "ids"));
           send(res, 200, editorState(service));
           return;
         }
         if (route === "/bench/tools") {
-          service.setTools("bench", body.id, strings(body.tools) ?? []);
+          service.setTools("bench", requireString(body.id, "id"), requireStrings(body.tools, "tools"));
           send(res, 200, editorState(service));
           return;
         }
         if (route === "/global") {
-          service.setTools("global", null, strings(body.tools) ?? []);
+          service.setTools("global", null, requireStrings(body.tools, "tools"));
           send(res, 200, editorState(service));
           return;
         }
         if (route === "/tools/reorder") {
-          service.reorderTools(strings(body.names) ?? []);
+          service.reorderTools(requireStrings(body.names, "names"));
           send(res, 200, editorState(service));
           return;
         }

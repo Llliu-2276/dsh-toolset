@@ -277,5 +277,3 @@ export class WorkbenchStore {
     return next;
   }
 }
-
-export { newBenchId };

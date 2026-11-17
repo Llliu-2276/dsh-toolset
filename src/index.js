@@ -1,4 +1,3 @@
-import { appendPluginRecord } from "@deepseek-ai/dsh-session";
 import { configPath } from "./config.js";
 import { createSessionRecorder } from "./session.js";
 import { WorkbenchService } from "./service.js";
@@ -20,6 +19,9 @@ export const inject = ["tools", "systemPrompt", "sessionProjections", "agents", 
  * in the system prompt, and `request_tool` asks the user for a one-turn grant.
  */
 export async function apply(ctx, config) {
+  // Loaded here rather than at module scope so the plugin module can be
+  // inspected (and unit-tested) without the host's session package installed.
+  const { appendPluginRecord } = await import("@deepseek-ai/dsh-session");
   const log = ctx.logger("dsh-toolset");
   const service = new WorkbenchService(ctx, {
     file: config?.file ?? configPath(),
