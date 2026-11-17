@@ -11,7 +11,7 @@ window.__ModuleLoader__.load({
   factory(require) {
     const React = require("react");
     const h = React.createElement;
-    const { useCallback, useEffect, useMemo, useRef, useState } = React;
+    const { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } = React;
 
     const API = "/dsh-toolset/api";
     const NS = "dsh-toolset";
@@ -451,6 +451,58 @@ window.__ModuleLoader__.load({
       }, [active, close, ref]);
     }
 
+    /**
+     * The settings surface clips whatever sticks out past its own bottom edge
+     * and never hands a section a height, so the page measures the ancestor
+     * that actually clips it. The hook only ever *tightens* the CSS rule
+     * (`max-height: min(100%, calc(100dvh - 260px))`): it reads what CSS
+     * resolved to before applying an inline limit, so it can shrink the page
+     * when the real box turns out to be smaller, and can never grow it past
+     * what the stylesheet already decided.
+     */
+    function useClippingLimit() {
+      const ref = useRef(null);
+      const cssCapRef = useRef(Number.POSITIVE_INFINITY);
+      const [limit, setLimit] = useState(null);
+      useLayoutEffect(() => {
+        const node = ref.current;
+        if (node === null || typeof window === "undefined") return undefined;
+        const measure = () => {
+          if (node.style.maxHeight === "") {
+            const resolved = parseFloat(window.getComputedStyle(node).maxHeight);
+            cssCapRef.current = Number.isFinite(resolved) ? resolved : Number.POSITIVE_INFINITY;
+          }
+          let host = node.parentElement;
+          while (host !== null && host !== document.body) {
+            const style = window.getComputedStyle(host);
+            if (style.overflowY !== "visible" || style.overflowX !== "visible") break;
+            host = host.parentElement;
+          }
+          if (host === null || host === document.body) {
+            setLimit(null);
+            return;
+          }
+          const style = window.getComputedStyle(host);
+          const inner =
+            host.clientHeight - (parseFloat(style.paddingTop) || 0) - (parseFloat(style.paddingBottom) || 0);
+          const cap = Math.min(inner, cssCapRef.current);
+          setLimit(Number.isFinite(cap) && cap > 160 ? Math.floor(cap) : null);
+        };
+        measure();
+        let observer = null;
+        if (typeof ResizeObserver === "function" && node.parentElement !== null) {
+          observer = new ResizeObserver(measure);
+          observer.observe(node.parentElement);
+        }
+        window.addEventListener("resize", measure);
+        return () => {
+          if (observer !== null) observer.disconnect();
+          window.removeEventListener("resize", measure);
+        };
+      }, []);
+      return [ref, limit === null ? undefined : { maxHeight: `${limit}px` }];
+    }
+
     /** Workbench projection for this conversation, or undefined when the framework passes none. */
     function projectionOf(useProjection) {
       if (typeof useProjection !== "function") return undefined;
@@ -866,6 +918,7 @@ window.__ModuleLoader__.load({
       const [selectedId, setSelectedId] = useState(null);
       const [dragBench, setDragBench] = useState(null);
       const [dragTool, setDragTool] = useState(null);
+      const [pageRef, pageStyle] = useClippingLimit();
 
       const load = useCallback(() => {
         Promise.all([api("/state"), api("/tools")])
@@ -920,7 +973,7 @@ window.__ModuleLoader__.load({
       if (config === null) {
         return h(
           "div",
-          { className: "dswb-page" },
+          { className: "dswb-page", ref: pageRef, style: pageStyle },
           error !== null ? h("div", { className: "dswb-error" }, error) : h("div", { className: "dswb-hint" }, tr("loading")),
         );
       }
@@ -988,7 +1041,7 @@ window.__ModuleLoader__.load({
 
       return h(
         "div",
-        { className: "dswb-page" },
+        { className: "dswb-page", ref: pageRef, style: pageStyle },
         h("h2", { className: "dswb-title" }, tr("title")),
         h("p", { className: "dswb-desc" }, tr("intro")),
         config.degraded ? h("div", { className: "dswb-banner" }, tr("degraded", { error: config.error ?? "unknown", file: config.file })) : null,
