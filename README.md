@@ -67,6 +67,8 @@ dsh plugin --profile <profile> add <本仓库路径或包名>
 - **会话标题右侧的标签**：`工作台：办公 · 12 个工具`，冻结后变绿；工作台被删掉时显示「（已删除）」。
 - **设置 → 工作台**：一行可横向滚动的工作台卡片（全局固定在最左，右侧固定一个「+」新建卡片），点卡片即选中、右上角铅笔改名称与介绍、垃圾桶四秒内点两次删除；下方是工具卡片列表，点一下加入/移出当前工作台，已在全局的工具置灰不可点；工作台与工具都能拖动排序。
 
+图标是线条版「我的世界工作台」，出现在输入框胶囊、会话头部标签、设置页卡片、设置左导航和插件列表里；素材在 `assets/crafting-table/`，实现说明见 `docs/design.md` §3.3。
+
 没有 UI 的环境（headless）用 `/workbench` 命令：不带参数列出现有工作台，`/workbench 办公` 选一个。
 
 ## 开发
@@ -90,6 +92,7 @@ node scripts/e2e/run.mjs   # 端到端：真实 headless 会话 + mock 模型，
 ```
 src/          host 实现（配置、store、掩码、目录、申请工具、投影、命令、HTTP 路由）
 client/       客户端 bundle（三块插槽 + 设置页，手写浏览器模块）
+assets/       图标素材（线条版工作台 SVG 与预览图）
 test/         单元测试（node:test）
 scripts/e2e/  端到端验证（临时 DSH_HOME + mock 模型 + 自动批准）
 docs/         design.md（设计）、plan.md（进度与实测）、DECISIONS.md（决策）、research/（调研）

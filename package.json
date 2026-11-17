@@ -17,6 +17,7 @@
     "client",
     "cordis.patch.yml",
     "locale/*.json",
+    "assets/crafting-table/*.svg",
     "icon.svg",
     "README.md"
   ],

@@ -129,6 +129,15 @@ desktop 安装暴露出一个 host 侧时序 bug（已修，见 `design.md` §5.
 
 截图留在 `tmp/shot-light.png` 与 `tmp/shot-dark.png`（不提交）。上述脚本都只在 `tmp/` 下跑（依赖装在 `%TEMP%\render`），不进仓库——项目本身仍然零依赖、无构建步骤（D29）。
 
+### 4.6 图标替换（2026-11-18）与验证
+
+把用户交付的 `deliverables/crafting-table-icon/` 搬成 `assets/crafting-table/`（两份 SVG + 三张预览图），根目录 `icon.svg` 用 badge 版本，`client/client.js` 的 `CraftingTable` 换成画稿几何并按尺寸反算描边，设置左导航补注册 `settings.section.icon`。
+
+- **插槽契约先查后改**：在 asar 里确认 `settings.section.icon` 是 list 插槽，`register` 只接受 `id`/`order`/`label`，`id` 必须等于 `settings.section` 的 id（`dsh-client-ui-settings-general/lib/client.js:310` 用 `{only: row.id, fallback: navIcon(row.id)}` 取值，取不到退回齿轮）。所以这一处不需要改宿主，也没有放弃任何一处。
+- **jsdom 渲染 + 注册断言**（`tmp/icon-check.mjs`）：确认 `apply()` 注册了 4 个插槽；图标的注册参数是 `{name:"settings.section.icon", id:"dsh-toolset", order:18}`；渲染 `size=16` 得到 `viewBox 0 0 64 64`、`stroke-width 3.44`（约 0.86px）、7 条路径，`size=13` 时描边自动加粗到 4.23。
+- **夹具量测**：`tmp/panel-fixture.mjs` 重新生成后，工作台卡片图标已是 `viewBox 0 0 64 64` / `stroke-width 3.669`（size 15），新建卡片仍 76px、工具盒 724px，说明布局没被图标尺寸带偏。
+- **交互不回退**：`tmp/interact.mjs` 12/12、`node --test` 71/71。
+
 ## 5. P3：集成与验收
 
 按 `design.md` §7 的 11 条：
@@ -179,6 +188,7 @@ desktop 安装暴露出一个 host 侧时序 bug（已修，见 `design.md` §5.
 - `src/`：host 实现（12 个模块）
 - `client/client.js`：客户端 UI（三块插槽 + 设置页，手写浏览器模块）
 - `test/`：12 个测试文件，71 个用例
+- `assets/crafting-table/`：图标素材（线条版工作台 SVG 两份 + 预览图）
 - `scripts/e2e/`：`run.mjs`、`mock-llm.mjs`、`approver.js`
 - `package.json`、`cordis.patch.yml`、`icon.svg`、`locale/{en,zh}.json`、`.gitignore`
 - `README.md`：定位、安装、配置、开发与状态

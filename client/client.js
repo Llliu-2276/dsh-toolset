@@ -340,18 +340,46 @@ window.__ModuleLoader__.load({
       );
     }
 
-    /** Line-art Minecraft crafting table: studded top, 3x3 grid, tapered legs. */
-    const CraftingTable = ({ size = 16 }) =>
-      svg(size, [
-        h("path", { key: "top", d: "M3.2 5.4h17.6v7.4H3.2z" }),
-        h("path", { key: "v1", d: "M9.1 5.4v7.4" }),
-        h("path", { key: "v2", d: "M14.9 5.4v7.4" }),
-        h("path", { key: "h1", d: "M3.2 7.9h17.6" }),
-        h("path", { key: "h2", d: "M3.2 10.3h17.6" }),
-        h("path", { key: "leg1", d: "M5.6 12.8 4.4 18.6" }),
-        h("path", { key: "leg2", d: "M18.4 12.8 19.6 18.6" }),
-        h("path", { key: "rail", d: "M4.9 18.6h14.2" }),
-      ]);
+    /**
+     * Line-art Minecraft crafting table: an isometric cube whose top face carries
+     * the 3x3 grid. Geometry is the authored 64px artwork shipped in
+     * `assets/crafting-table/crafting-table.svg`; the authored 2.8 stroke would
+     * fade to a hairline at the 12–16px sizes used here, so it is scaled up to
+     * stay around 0.86px (body) and 0.62px (grid) on screen.
+     */
+    const CraftingTable = ({ size = 16 }) => {
+      const scale = size / 64;
+      const body = Math.max(2.8, 0.86 / scale);
+      const grid = Math.max(2, 0.62 / scale);
+      return h(
+        "svg",
+        {
+          viewBox: "0 0 64 64",
+          width: size,
+          height: size,
+          fill: "none",
+          stroke: "currentColor",
+          strokeWidth: body,
+          strokeLinecap: "round",
+          strokeLinejoin: "round",
+          "aria-hidden": true,
+        },
+        [
+          h("path", { key: "cube", d: "M32 6.6 54 19.3 54 44.7 32 57.4 10 44.7 10 19.3Z" }),
+          h("path", { key: "top", d: "M54 19.3 32 32 10 19.3" }),
+          h("path", { key: "edge", d: "M32 32v25.4" }),
+          h("g", { key: "grid", strokeWidth: grid, strokeLinecap: "butt" }, [
+            h("path", { key: "g1", d: "M39.33 10.83 17.33 23.53" }),
+            h("path", { key: "g2", d: "M46.67 15.06 24.67 27.77" }),
+            h("path", { key: "g3", d: "M24.67 10.83 46.67 23.53" }),
+            h("path", { key: "g4", d: "M17.33 15.06 39.33 27.77" }),
+          ]),
+        ],
+      );
+    };
+
+    /** Navigation glyph for the settings sidebar; the shell hands over the size. */
+    const SettingsIcon = ({ size = 16 }) => h(CraftingTable, { size });
 
     const Chevron = ({ open }) =>
       h(
@@ -1191,6 +1219,12 @@ window.__ModuleLoader__.load({
             },
             SettingsPage,
           ),
+        );
+
+        /* The nav glyph lives in its own slot, addressed by the section id. The shell
+           keeps its default gear when nothing is registered for that id. */
+        ctx.slots.inject("settings.section.icon", () =>
+          ctx.slots.register({ name: "settings.section.icon", id: NS, order: 18 }, SettingsIcon),
         );
       },
     };
