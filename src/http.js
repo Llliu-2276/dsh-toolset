@@ -1,4 +1,27 @@
+import { CORE_TOOLS, REQUEST_TOOL } from "./core.js";
+
 const MAX_BODY = 64 * 1024;
+
+/** Tools DSH itself ships, which no plugin can claim. */
+const BUILTIN_TOOLS = new Set([...CORE_TOOLS, REQUEST_TOOL, "web_search", "web_fetch"]);
+
+/**
+ * Best-effort origin of one tool. The tool registry exposes no owner metadata
+ * (`{ definition, when }` only), so this reads what the name encodes: MCP tools
+ * are `mcp__<server>__<rawName>`, DSH's own tools are known by name, and plugin
+ * tools are named after the plugin that ships them (`univer_execute`).
+ */
+function toolSource(name) {
+  if (name.startsWith("mcp__")) {
+    const rest = name.slice("mcp__".length);
+    const cut = rest.indexOf("__");
+    return { kind: "mcp", label: cut === -1 ? rest : rest.slice(0, cut) };
+  }
+  if (BUILTIN_TOOLS.has(name)) return { kind: "builtin", label: "" };
+  const parts = name.split("_").filter((part) => part !== "");
+  const token = parts[0] === "dsh" && parts.length > 1 ? parts[1] : parts[0];
+  return token === undefined ? { kind: "plugin", label: name } : { kind: "plugin", label: token };
+}
 
 function send(res, status, payload) {
   res.writeHead(status, {
@@ -32,6 +55,7 @@ function editorState(service) {
     global: config.global?.tools ?? [],
     benches: config.benches,
     lastSelected: config.lastSelected ?? null,
+    toolOrder: config.toolOrder ?? [],
     degraded: config.degraded === true,
     readOnly: service.readOnly === true,
     file: config.file,
@@ -62,6 +86,7 @@ function toolCatalog(ctx) {
     .map(([name, description]) => ({
       name,
       description: description === "" ? (ctx.tools.get(name)?.description ?? "") : description,
+      source: toolSource(name),
     }))
     .sort((left, right) => left.name.localeCompare(right.name));
 }
@@ -120,17 +145,23 @@ export function registerWorkbenchHttp(ctx, { engine, service }) {
         }
         if (route === "/bench") {
           const name = typeof body.name === "string" ? body.name : "";
-          service.create(name);
+          const description = typeof body.description === "string" ? body.description : "";
+          service.create(name, description);
           send(res, 200, editorState(service));
           return;
         }
-        if (route === "/bench/rename") {
-          service.rename(body.id, body.name);
+        if (route === "/bench/update") {
+          service.update(body.id, { name: body.name, description: body.description });
           send(res, 200, editorState(service));
           return;
         }
         if (route === "/bench/remove") {
           service.remove(body.id);
+          send(res, 200, editorState(service));
+          return;
+        }
+        if (route === "/bench/reorder") {
+          service.reorderBenches(strings(body.ids) ?? []);
           send(res, 200, editorState(service));
           return;
         }
@@ -144,8 +175,8 @@ export function registerWorkbenchHttp(ctx, { engine, service }) {
           send(res, 200, editorState(service));
           return;
         }
-        if (route === "/tools/move-to-global") {
-          service.moveToGlobal(strings(body.tools) ?? []);
+        if (route === "/tools/reorder") {
+          service.reorderTools(strings(body.names) ?? []);
           send(res, 200, editorState(service));
           return;
         }

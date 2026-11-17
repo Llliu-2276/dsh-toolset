@@ -1,5 +1,12 @@
 import { CORE_TOOLS } from "./core.js";
-import { defaultConfig, loadConfig, normalizeConfig, saveConfig, MAX_NAME_LENGTH } from "./config.js";
+import {
+  defaultConfig,
+  loadConfig,
+  normalizeConfig,
+  saveConfig,
+  MAX_DESCRIPTION_LENGTH,
+  MAX_NAME_LENGTH,
+} from "./config.js";
 
 let idCounter = 0;
 
@@ -13,6 +20,29 @@ function requiredName(value) {
   if (name === "") throw new Error("工作台名称不能为空");
   if (name.length > MAX_NAME_LENGTH) throw new Error(`工作台名称不能超过 ${MAX_NAME_LENGTH} 个字符`);
   return name;
+}
+
+/** Descriptions are optional: an empty string is a valid value. */
+function optionalDescription(value) {
+  const description = typeof value === "string" ? value.trim() : "";
+  if (description.length > MAX_DESCRIPTION_LENGTH) {
+    throw new Error(`工作台介绍不能超过 ${MAX_DESCRIPTION_LENGTH} 个字符`);
+  }
+  return description;
+}
+
+/** Trim, drop empties and duplicates, keep the first-seen order. */
+function toolNames(value) {
+  if (!Array.isArray(value)) throw new Error("工具列表必须是数组");
+  const wanted = [];
+  const seen = new Set();
+  for (const item of value) {
+    const name = typeof item === "string" ? item.trim() : "";
+    if (name === "" || seen.has(name)) continue;
+    seen.add(name);
+    wanted.push(name);
+  }
+  return wanted;
 }
 
 /**
@@ -118,30 +148,46 @@ export class WorkbenchStore {
     return reason;
   }
 
-  create(name) {
+  create(name, description = "") {
     this.assertWritable();
     const trimmed = requiredName(name);
     if (this.config.benches.some((bench) => bench.name === trimmed)) {
       throw new Error(`已经有一个叫「${trimmed}」的工作台`);
     }
-    const bench = { id: newBenchId(), name: trimmed, tools: [], createdAt: Date.now() };
+    const bench = {
+      id: newBenchId(),
+      name: trimmed,
+      description: optionalDescription(description),
+      tools: [],
+      createdAt: Date.now(),
+    };
     this.commit({ ...this.config, benches: [...this.config.benches, bench] }, "create");
     return structuredClone(bench);
   }
 
-  rename(id, name) {
+  /** Change the name and/or the description of an existing workbench. */
+  update(id, patch) {
     this.assertWritable();
     const bench = this.benchById(id);
     if (!bench) throw new Error("工作台不存在");
-    const trimmed = requiredName(name);
-    if (this.config.benches.some((other) => other.id !== id && other.name === trimmed)) {
-      throw new Error(`已经有一个叫「${trimmed}」的工作台`);
+    const next = { ...bench };
+    if (patch?.name !== undefined) {
+      const trimmed = requiredName(patch.name);
+      if (this.config.benches.some((other) => other.id !== id && other.name === trimmed)) {
+        throw new Error(`已经有一个叫「${trimmed}」的工作台`);
+      }
+      next.name = trimmed;
     }
+    if (patch?.description !== undefined) next.description = optionalDescription(patch.description);
     this.commit(
-      { ...this.config, benches: this.config.benches.map((other) => (other.id === id ? { ...other, name: trimmed } : other)) },
-      "rename",
+      { ...this.config, benches: this.config.benches.map((other) => (other.id === id ? next : other)) },
+      "update",
     );
     return this.benchById(id);
+  }
+
+  rename(id, name) {
+    return this.update(id, { name });
   }
 
   remove(id) {
@@ -166,15 +212,8 @@ export class WorkbenchStore {
    */
   setTools(kind, benchId, tools) {
     this.assertWritable();
-    if (!Array.isArray(tools)) throw new Error("tools 必须是数组");
-    const wanted = [];
-    const seen = new Set();
-    for (const item of tools) {
-      const name = typeof item === "string" ? item.trim() : "";
-      if (name === "" || seen.has(name)) continue;
-      seen.add(name);
-      wanted.push(name);
-    }
+    const wanted = toolNames(tools);
+    const seen = new Set(wanted);
 
     if (kind === "global") {
       const nextBenches = this.config.benches.map((bench) => ({
@@ -201,32 +240,33 @@ export class WorkbenchStore {
   }
 
   /**
-   * Move tools into the global workbench, removing them from every normal
-   * workbench first. Returns which workbenches lost which tools.
+   * Reorder the normal workbenches. `ids` must be a permutation of the current
+   * ids: a partial list would silently drop the missing workbenches.
    */
-  moveToGlobal(tools) {
+  reorderBenches(ids) {
     this.assertWritable();
-    if (!Array.isArray(tools)) throw new Error("tools 必须是数组");
-    const wanted = [];
-    const seen = new Set();
-    for (const item of tools) {
-      const name = typeof item === "string" ? item.trim() : "";
-      if (name === "" || seen.has(name)) continue;
-      seen.add(name);
-      wanted.push(name);
-    }
-    const removedFrom = [];
-    for (const bench of this.config.benches) {
-      const lost = bench.tools.filter((name) => seen.has(name));
-      if (lost.length > 0) removedFrom.push({ id: bench.id, name: bench.name, tools: lost });
-    }
-    const nextBenches = this.config.benches.map((bench) => ({
-      ...bench,
-      tools: bench.tools.filter((name) => !seen.has(name)),
-    }));
-    const globalTools = [...new Set([...this.config.global.tools, ...wanted])];
-    this.commit({ ...this.config, global: { tools: globalTools }, benches: nextBenches }, "moveToGlobal");
-    return { added: wanted, removedFrom };
+    if (!Array.isArray(ids)) throw new Error("ids 必须是数组");
+    const current = this.config.benches.map((bench) => bench.id);
+    const wanted = ids.filter((id) => typeof id === "string");
+    const complete =
+      wanted.length === current.length &&
+      new Set(wanted).size === current.length &&
+      current.every((id) => wanted.includes(id));
+    if (!complete) throw new Error("工作台顺序必须恰好包含全部工作台");
+    const benches = wanted.map((id) => this.benchById(id));
+    this.commit({ ...this.config, benches }, "reorderBenches");
+    return benches.map((bench) => bench.id);
+  }
+
+  /**
+   * Persist the display order of the tool cards. Unknown names are kept on
+   * purpose: an uninstalled plugin may come back with the same tool names.
+   */
+  reorderTools(names) {
+    this.assertWritable();
+    const toolOrder = toolNames(names);
+    this.commit({ ...this.config, toolOrder }, "reorderTools");
+    return [...toolOrder];
   }
 
   setLastSelected(id) {

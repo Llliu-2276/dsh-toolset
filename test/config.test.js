@@ -87,6 +87,29 @@ test("loadConfig degrades on broken JSON without touching the file", () => {
   assert.equal(readFileSync(file, "utf8"), "{ not json");
 });
 
+test("normalizeConfig keeps a description and the shared tool order", () => {
+  const result = normalizeConfig({
+    version: 1,
+    global: { tools: [] },
+    benches: [{ id: "b1", name: "办公", description: "  写文档  ", tools: [] }],
+    toolOrder: ["grep", " read "],
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.config.benches[0].description, "写文档");
+  assert.deepEqual(result.config.toolOrder, ["grep", "read"]);
+  assert.deepEqual(defaultConfig().toolOrder, []);
+});
+
+test("normalizeConfig rejects an over-long description", () => {
+  const result = normalizeConfig({
+    version: 1,
+    global: { tools: [] },
+    benches: [{ id: "b1", name: "办公", description: "x".repeat(201), tools: [] }],
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.errors.join("\n"), /介绍超过/);
+});
+
 test("saveConfig writes atomically and keeps a backup", () => {
   const file = tempFile();
   saveConfig(file, { version: 1, lastSelected: null, global: { tools: [] }, benches: [] });

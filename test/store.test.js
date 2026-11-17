@@ -40,13 +40,51 @@ test("adding a tool to global removes it from every workbench", () => {
   store.setTools("bench", a.id, ["grep", "pwsh"]);
   store.setTools("bench", b.id, ["grep", "read"]);
 
-  const moved = store.moveToGlobal(["grep"]);
-  assert.deepEqual(moved.added, ["grep"]);
-  assert.equal(moved.removedFrom.length, 2);
+  store.setTools("global", null, ["grep"]);
 
   assert.deepEqual(store.list().global.tools, ["grep"]);
   assert.deepEqual(store.benchById(a.id).tools, ["pwsh"]);
   assert.deepEqual(store.benchById(b.id).tools, ["read"]);
+});
+
+test("create stores a description that update can change", () => {
+  const { store } = createStore();
+  const bench = store.create("办公", "  写文档和处理表格  ");
+  assert.equal(bench.description, "写文档和处理表格");
+
+  store.update(bench.id, { name: "文档", description: "只写文档" });
+  const next = store.benchById(bench.id);
+  assert.equal(next.name, "文档");
+  assert.equal(next.description, "只写文档");
+
+  store.update(bench.id, { description: "" });
+  assert.equal(store.benchById(bench.id).description, "");
+
+  store.create("写作");
+  assert.throws(() => store.update(bench.id, { name: "写作" }), /已经有一个/);
+  assert.throws(() => store.create("长", "x".repeat(201)), /介绍不能超过/);
+});
+
+test("reorderBenches demands every id and keeps the new order", () => {
+  const { store } = createStore();
+  const a = store.create("A");
+  const b = store.create("B");
+  const c = store.create("C");
+
+  store.reorderBenches([c.id, a.id, b.id]);
+  assert.deepEqual(
+    store.list().benches.map((bench) => bench.name),
+    ["C", "A", "B"],
+  );
+
+  assert.throws(() => store.reorderBenches([a.id]), /全部工作台/);
+  assert.throws(() => store.reorderBenches([a.id, a.id, b.id]), /全部工作台/);
+});
+
+test("reorderTools keeps toolOrder clean and ordered", () => {
+  const { store } = createStore();
+  store.reorderTools(["  grep ", "read", "grep", ""]);
+  assert.deepEqual(store.list().toolOrder, ["grep", "read"]);
 });
 
 test("a workbench silently drops tools that live in global", () => {

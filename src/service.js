@@ -62,8 +62,12 @@ export class WorkbenchService extends Service {
     return this.#store.ownerOf(tool);
   }
 
-  create(name) {
-    return this.#store.create(name);
+  create(name, description) {
+    return this.#store.create(name, description);
+  }
+
+  update(id, patch) {
+    return this.#store.update(id, patch);
   }
 
   rename(id, name) {
@@ -78,8 +82,12 @@ export class WorkbenchService extends Service {
     return this.#store.setTools(kind, benchId, tools);
   }
 
-  moveToGlobal(tools) {
-    return this.#store.moveToGlobal(tools);
+  reorderBenches(ids) {
+    return this.#store.reorderBenches(ids);
+  }
+
+  reorderTools(names) {
+    return this.#store.reorderTools(names);
   }
 
   setLastSelected(id) {

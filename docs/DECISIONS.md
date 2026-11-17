@@ -155,10 +155,10 @@
 - **理由**：配置文件是唯一真相，坏一次整个功能不可用。
 - **代价**：多几行代码，值得。
 
-### D25 工具来源标签只做尽力而为 · 暂缓
+### D25 工具来源标签只做尽力而为 · 暂缓（2026-11-17 由 D33 部分恢复）
 
 - **原决定**：`mcp__<server>__<tool>` 解析出 MCP 服务器名；其余标「内置」或「插件」。
-- **实际**：0.2.2-rc.1 的 `tools.view().registrations` 只给 `definition` 与拦截器，没有来源字段，也不保证 `mcp__` 命名；不做标签，等 DSH 提供来源元数据再补。
+- **实际**：0.2.2-rc.1 的 `tools.view().registrations` 只给 `definition` 与拦截器，没有来源字段；`get()` 返回的也是 definition。当时不做标签，等 DSH 提供来源元数据再补。
 - **代价**：未分类清单里看不出工具来自内置、MCP 还是插件。
 
 ### D26 文档名与目录收敛为英文小写 · 采纳
@@ -196,6 +196,25 @@
 - **决定**：`attach()`（插件加载时对已有会话）与 `select()`（用户点选工作台）都不调用 `reapply()`；`reapply()` 在 allow 为空或只剩 `request_tool` 时直接跳过并记警告。
 - **理由**：桌面端装上插件的当轮出现了真实故障：`attach()` 时状态里还没有解析出的工具集，`restrict({allow:["request_tool"]})` 把可见集清空；DSH 的 in-history 投影会把历史工具标成 `defer_loading`，服务端返回 `400 INVALID_REQUEST: tools: at least one tool must have defer_loading=false. All tools cannot be deferred.`。掩码本来就应该绑在「这一轮要发哪些工具」上，`turn/start` 正是唯一能拿到已解析工具集的时点。
 - **代价**：插件热装到已运行的会话后，若该会话不再发消息，它保持原工具集；这是想要的行为。多一条守卫后，工具集从未解析成功的会话会一直不掩码，日志里有警告可查。
+
+### D32 设置页改成卡片式布局，排序用原生 HTML5 拖动 · 采纳（2026-11-17）
+
+- **决定**：设置页不再用「输入框 + 复选框平铺 + 未分类清单」，而是三块——工作台卡片行（横向滚动，全局卡片固定最左、「+」卡片固定最右，普通卡片可拖动）、工具卡片列表（单列竖向滚动，一行一个，可拖动）、新建/编辑弹窗。删除按钮在卡片右上角，四秒内二次点击才生效。工具卡片点一下即加入/移出当前工作台；已在全局的工具在普通工作台里置灰不可点。
+- **理由**：工具数量到十几个以后，平铺的复选框和「未分类」清单都读不出「这个工具属于谁、能干什么」。卡片能同时承载名字、介绍、来源徽标和选中态；横向滚动的工作台行让「全局 + 若干工作台」在一屏里并排可比，而「+」固定住，滚动时不用找。
+- **替代方案**：(a) 保持复选框，只加 tooltip——信息密度上不去；(b) 用 `<select>` 切编辑对象——多一次点击，且看不到并行对比；(c) 引入拖拽库——违反 D29 无构建步骤，且原生 DnD 够用。
+- **代价**：拖动排序要新增 `reorderBenches`/`reorderTools` 两条写路径与两处落盘顺序；HTML5 DnD 在触屏上不可用（触屏用户仍可用「+」新建与点卡片增删，排序暂缺）。
+
+### D33 工具来源徽标做「尽力而为」解析 · 采纳（2026-11-17，部分推翻 D25）
+
+- **决定**：`/tools` 每项带 `source`：名字形如 `mcp__<server>__<tool>` → `{kind:"mcp",label:<server>}`；`CORE_TOOLS` + `request_tool` + `web_search`/`web_fetch` → `{kind:"builtin",label:""}`（UI 显示「内置」）；其余取名字首段（`dsh_` 前缀时取第二段）→ `{kind:"plugin",label:<token>}`。
+- **理由**：DSH 只提供 `registration = {definition, when}`，没有 plugin/owner/source 字段（`dsh-tools/lib/index.js:441-444`、`:477-508`），要显示来源只能从名字反推。MCP 前缀是 MCP 客户端自己拼的固定契约（`dsh-mcp-client/lib/index.js` 的 `publicToolName`），可靠；插件名只能猜，所以标成尽力而为，猜错也只是标签不准，不影响掩码与功能。
+- **代价**：非 MCP 的第三方工具可能显示成 `dsh` 之外的奇怪片段；用户看到「来源」不是权威信息。等 DSH 暴露注册者元数据后应改回真值（那时 D25 的原方案作废）。
+
+### D34 客户端 UI 只引用宿主 design token，深色跟随 `body[data-ds-dark-theme]` · 采纳（2026-11-17）
+
+- **决定**：所有颜色、圆角、阴影、聚焦环都写 `var(--dsw-*)`，不写任何一个字面色值（图标内部描边除外）；不自己监听 `prefers-color-scheme`，也不给容器加主题类名。
+- **理由**：宿主主题的浅色声明在 `body{}`、深色覆盖在 `body[data-ds-dark-theme]{}`（`dsh-client-ui-theme/lib/client.js` 的内联 CSS，`installThemeStyles()` 注入），插件内容在普通 DOM 里，天然继承这些变量；反过来自己判断主题必然与宿主的 `system` → 解析后的方案出现时差。旧版深色白底的真因是引用了三个并不存在的 token（`--dsw-alias-bg-elevated`、`--dsw-alias-bg-secondary`、`--dsw-alias-border-subtle`，全库 0 命中）并给 `#fff` 兜底。
+- **代价**：可用变量受宿主约束（例如 `--dsw-focus-ring-color` 不是全局 token，要带 fallback）；宿主改 token 名会打破样式——用 `tmp/check-tokens.mjs` 这类交叉校验兜住。
 
 ## E. v1 决策处置
 

@@ -55,7 +55,7 @@
 单元测试（`node --test`，30 个用例）：
 
 - `test/config.test.js`：默认配置、读写往返、损坏文件降级、原子写与 `.bak`、版本与字段校验、名称长度。
-- `test/store.test.js`：创建/重命名/删除、重名拒绝、全局与普通工作台互斥、`moveToGlobal` 的移除计数、`setTools` 去重、`lastSelected`、`resolve()` 快照、删除后的 `deleted`。
+- `test/store.test.js`：创建/更新（名称与介绍）/重命名/删除、重名拒绝、超长介绍拒绝、全局与普通工作台互斥、`reorderBenches` 全量校验、`reorderTools` 去重、`setTools` 去重、`lastSelected`、`resolve()` 快照、删除后的 `deleted`（35 个用例）。
 - `test/catalog.test.js`：首句截断、80 字上限、归属标签（全局/工作台/未分类）、空目录。
 - `test/projection.test.js`：未选过的会话回落到 `lastSelected`、主动选「无工作台」保持空、frozen 覆盖回落、删除后的 `deleted`。
 - `test/mask.test.js`：挂载已有会话不立即掩码、选择工作台不立即掩码、`turn/start` 才按「核心 ∪ 工作台 ∪ `request_tool`」施加、可见集为空或只剩 `request_tool` 时整体跳过（这条守的是桌面端那次 `400 INVALID_REQUEST: tools: at least one tool must have defer_loading=false`）。
@@ -92,12 +92,12 @@
 
 1. **composer 胶囊**（`conversation.input.right`，order 5）：显示当前工作台或「无工作台」；菜单列「无工作台」+ 各工作台（带工具数）；冻结后按钮禁用并提示「已冻结」。
 2. **会话头部标签**（`conversation.session.header.actions`，order 10）：`工作台：X`；冻结后 `data-frozen` 变绿、带工具数，`title` 为「工作台：X（已冻结）」。
-3. **设置页分区**（`settings.section`，order 18，`label:() => "工作台"`）：新建、改名（失焦提交）、删除（两次点击确认）、每个工作台的工具勾选、全局工作台、未分类清单（点一下移到全局）、degraded 横幅、readOnly 时整体禁用。
+3. **设置页分区**（`settings.section`，order 18，`label:() => "工作台"`）：工作台卡片行（全局卡片固定最左、普通卡片可拖动、「+」卡片固定最右、点卡片切换编辑对象、铅笔弹窗改名称与介绍、垃圾桶四秒内二次点击删除）+ 工具卡片列表（单列竖向滚动、点卡片增删、全局工具置灰、可拖动排序）；degraded 横幅、readOnly 时整体禁用。
 
 ### 4.3 数据通道（已落地：host 前缀路由）
 
 - **读**：会话投影走插槽 props 里的 `useProjection("workbench")`（`{benchId,name,started,core,global,bench,deleted}`）；设置页走 `GET /dsh-toolset/api/state` 与 `GET /dsh-toolset/api/tools`。
-- **写**：`POST /dsh-toolset/api/select`（`{sessionId,benchId}` → `engine.select`）、`/bench`、`/bench/rename`、`/bench/remove`、`/bench/tools`、`/global`、`/tools/move-to-global`；每个写路由都回同一份扁平 state（`global` 是字符串数组）。
+- **写**：`POST /dsh-toolset/api/select`（`{sessionId,benchId}` → `engine.select`）、`/bench`（`{name,description}`）、`/bench/update`（`{id,name,description}`）、`/bench/remove`、`/bench/tools`、`/bench/reorder`（`{ids}` 必须是全部工作台的排列）、`/global`、`/tools/reorder`（`{names}`）；每个写路由都回同一份扁平 state（`global` 是字符串数组，另有 `toolOrder`）。`/tools` 每项带 `{name, description, source}`，`source` 是尽力而为的来源标签（`mcp`/`builtin`/`plugin`，见 D33）。
 - **鉴权**：handler 里 `ctx.connection.requestRejection(req) !== undefined` → 403；浏览器同源 `fetch` 自带 cookie，客户端不传任何 header。路由用 `ctx.inject(["webServer","connection"], scope => scope.effect(…))` 注册，headless 没有 `webServer` 时这段不加载。
 - **工具清单**：插件根 `ctx.tools.view()` 只看得到自己这一层，`toolCatalog()` 对 `ctx.agents.list()` 逐个 `ctx.tools.view(agent)` 取并集、再并根视图兜底；实测 34 个工具（含 `request_tool`）。
 - **不用 `session.command` 承载数据**：命令结果只有 `{kind,text}`，读不到结构化返回；选中工作台直接走 `/select`。
@@ -106,11 +106,21 @@
 
 开发环境：`tmp/devhome`（临时 `DSH_HOME`）+ `profiles/toolsetweb`（bundles 含 `@deepseek-ai/dsh-web-app` 与本插件的 `link:`）+ `dsh --profile toolsetweb --port 8977 --no-open`；浏览器用 agent-browser 打开启动日志里的 `?token=…` 地址（每次启动都变）。
 
-已验证：胶囊出现并能选中「办公」；选中后头部标签出现 `工作台：办公`；发出首条消息后标签变「已冻结」、胶囊禁用；设置页新建「测试台」、改名「临时台」、二次确认删除；勾选工具落盘；未分类 chip 点一下进全局。
+已验证：胶囊出现并能选中「办公」；选中后头部标签出现 `工作台：办公`；发出首条消息后标签变「已冻结」、胶囊禁用；设置页新建「测试台」、改名「临时台」、二次确认删除；勾选工具落盘。
 
 UI 暴露过两个 API 形状 bug（已修）：`/state` 曾把 `global` 原样透出成 `{tools:[…]}` 对象（客户端 `new Set()` 抛 *object is not iterable*）；`POST /bench` 曾返回 `{bench}` 而非整份 state（客户端 `config.benches is not iterable`）。教训：**每个写路由都回同一份 state 形状**；单测与 headless e2e 只测 host 逻辑，抓不到这类契约漂移。
 
 desktop 安装暴露出一个 host 侧时序 bug（已修，见 `design.md` §5.2 与 D31）：`install_bundle` 对已经在运行的会话调用 `attach()`，此时 `state.core/global/bench` 还是空的，`restrict` 只留下 `request_tool`，DSH 把历史工具都投影成 `defer_loading`，服务端回 `400 INVALID_REQUEST: tools: at least one tool must have defer_loading=false. All tools cannot be deferred.`（会话日志 `assistant/attempt` 的 finish 里能查到原文）。修法：挂载与选择都只记录，掩码只发生在 `turn/start`；`reapply` 在 allow 为空或只剩 `request_tool` 时跳过。e2e 抓不到它——e2e 的 agent 是新建的，`attach` 那一刻 `restrictableNames` 还没有 `request_tool`，allow 为空被旧守卫跳过；只有挂到已有会话、且视图里已经有 `request_tool` 时才触发。
+
+### 4.5 设置页重做（2026-11-17）与它的验证方式
+
+改的是纯前端：`client/client.js` 全量重写成卡片式布局（工作台卡片行 + 工具卡片列表 + 新建/编辑弹窗 + 原生 HTML5 拖动排序），`src/http.js` 加 `source` 字段与 `/bench/update`、`/bench/reorder`、`/tools/reorder`。三条自动检查替代了以前「在浏览器里点一遍」：
+
+1. **Token 交叉校验**（`tmp/check-tokens.mjs`，不进仓库）：从宿主主题包 `dsh-client-ui-theme/lib/client.js` 提取全部 `--dsw-*` 声明（414 个），与客户端 CSS 里 `var(--dsw-*)` 实际读到的 27 个求差集 → 0 个缺失，且 `bg-layer-1/2`、`label-primary`、`menu-surface-fill` 都有 `body[data-ds-dark-theme]` 覆盖。旧版深色白底的根因正是三个**不存在**的 token（`--dsw-alias-bg-elevated` 等）配了 `#fff` 兜底。
+2. **jsdom 渲染冒烟**（`tmp/preview.mjs`）：用假的 `window.__ModuleLoader__` 加载真实 `client.js`，桩掉 `ctx.slots` 与 `fetch` 提供 `state`/`tools` 夹具，`createRoot` 渲染设置页 → 18.8 KB DOM、工作台卡片与工具卡片都在、无抛错。这一步能抓「组件引用了不存在的变量」「props 形状对不上」这类单测与 e2e 都看不到的问题。
+3. **布局与配色实测**（agent-browser 打开生成的两份预览页）：深色下 `body` `rgb(21,21,23)`、卡片 `rgb(35,35,36)`、文字 `rgb(249,250,251)`、次要文字 `rgb(173,178,184)`，与宿主深色 token 一致；`.dswb-row` 只有两个子元素（滚动区 + 新建卡片），新建卡片右边界在滚动区之外（固定）；卡片带 `scrollWidth 848 > clientWidth 742`（确实会横向滚动）；工具卡片宽度一致 838px（一行一个）；`overflow-y: auto`；无横向溢出。
+
+截图留在 `tmp/shot-light.png` 与 `tmp/shot-dark.png`（不提交）。
 
 ## 5. P3：集成与验收
 
@@ -121,7 +131,7 @@ desktop 安装暴露出一个 host 侧时序 bug（已修，见 `design.md` §5.
 | 1 | 默认值（上次选择 / 无工作台） | ✅ 未选过的会话胶囊显示上次的工作台（投影回落 `lastSelected`）；主动选「无工作台」后保持空 |
 | 2 | 胶囊可选、发出首条消息后禁用、刷新后标签仍在 | ✅ 胶囊选中生效；首条消息后胶囊禁用（不消失）、头部标签出现，刷新后仍在（冻结态由投影承载） |
 | 3 | 请求体只含 CORE ∪ 全局 ∪ 当前工作台 | ✅ e2e 已断言 |
-| 4 | 设置页增删改、互斥、未分类计数 | ✅ 新建/改名/两次确认删除/勾选落盘/未分类 chip 移入全局，均在浏览器里点过 |
+| 4 | 设置页增删改、互斥、拖动排序、深浅色 | ✅ 卡片式设置页：token 交叉校验 0 缺失、jsdom 渲染冒烟通过、深色下实测配色与布局正确（见 §4.5）；新建/改名/两次确认删除/勾选落盘由单测覆盖，拖动排序的落盘由 store 单测覆盖（`reorderBenches`/`reorderTools`）；**拖动交互本身尚未在真实界面里操作过**（预览页是静态快照，不带事件） |
 | 5 | 目录正确（名字/用途/归属，有效集不出现） | ✅ e2e + 单测 |
 | 6 | 申请 → 批准 → 本轮可用、轮末收回 | ✅ 批准路径已 e2e；轮末收回只有单测（`onTurnEnd` 清 grants） |
 | 7 | 冻结：改配置不影响已开对话 | ✅ 单测（快照解析与冻结）；会话内改配置未实测 |

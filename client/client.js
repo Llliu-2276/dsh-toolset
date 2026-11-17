@@ -2,6 +2,9 @@
  * Browser half of dsh-toolset: the composer pill, the session-header tag and
  * the settings page. Hand-written module — no bundler, no TypeScript. Only the
  * baseline modules the web app offers to plugins (`react`) may be required.
+ *
+ * Theme: everything is painted with the host's `--dsw-alias-*` tokens, which
+ * switch with `<body data-ds-dark-theme>`; no colour is hard-coded here.
  */
 window.__ModuleLoader__.load({
   id: "dsh-toolset",
@@ -33,27 +36,40 @@ window.__ModuleLoader__.load({
         "nav": "工作台",
         "title": "工作台",
         "intro":
-          "每个对话在第一条消息发出时冻结一组工具；其余已安装工具只以「名字 + 一句话用途」出现在系统提示里，需要时由模型申请、你批准后临时放行。修改只影响新对话；同时归属全局工作台的工具不能再放进普通工作台。",
-        "degraded":
-          "配置文件损坏，已停止写入并暂时不做工具隔离：{error}（文件：{file}）",
+          "每个对话在第一条消息发出时冻结一组工具；其余已安装工具只以「名字 + 一句话用途」出现在系统提示里，需要时由模型申请、你批准后临时放行。修改只影响新对话。",
+        "degraded": "配置文件损坏，已停止写入并暂时不做工具隔离：{error}（文件：{file}）",
         "loading": "正在读取工作台配置…",
-        "create.title": "新建工作台",
-        "create.placeholder": "例如：办公",
-        "create.submit": "新建",
-        "empty": "还没有工作台。新建一个，再把要发给对话的工具勾上。",
-        "bench.name": "工作台名称",
-        "bench.remove": "删除",
-        "bench.confirmRemove": "确认删除",
-        "bench.summary": "已选 {count} 个工具；不属于任何工作台的已安装工具默认不发送。",
-        "bench.conflict": "这些工具同时在全局工作台里，不能重复分配：{tools}",
+        "board.title": "工作台",
+        "board.hint": "点卡片切换当前编辑的工作台；拖动卡片可以调整顺序。",
+        "board.add": "新建",
+        "board.addTitle": "新建工作台",
+        "board.editTitle": "修改工作台",
+        "board.remove": "删除工作台",
+        "board.confirmRemove": "确认删除",
+        "board.noDescription": "未填写介绍",
+        "board.selected": "正在编辑",
         "global.title": "全局工作台",
-        "global.desc": "这里的工具永远可用，不随对话选择变化；一个工具不能同时在全局和普通工作台里。",
-        "unclassified.title": "未分类",
-        "unclassified.count": "已安装但不在任何工作台：{count} 个",
-        "unclassified.empty": "所有已安装的工具都分配好了。",
-        "unclassified.toGlobal": "把 {name} 放进全局工作台",
-        "unclassified.hint": "默认不发送；点一下把它放进全局工作台，或在上面某个工作台里勾选。",
+        "global.desc": "这里的工具永远可用，不随对话选择变化。",
+        "form.name": "名称",
+        "form.namePlaceholder": "例如：办公",
+        "form.description": "介绍",
+        "form.descriptionPlaceholder": "一句话说明这个工作台用来做什么",
+        "form.create": "创建",
+        "form.save": "保存",
+        "form.cancel": "取消",
+        "form.edit": "编辑",
+        "empty": "还没有工作台。用右侧的「新建」加一个，再挑要发给对话的工具。",
+        "tools.title": "工具",
+        "tools.hint": "点工具卡片加入或移出当前工作台；拖动可以调整顺序。全局工作台里的工具不可再分配到普通工作台。",
+        "tools.hintGlobal": "点工具卡片加入或移出全局工作台。",
         "tools.empty": "没有可用的工具。",
+        "tools.count": "{count} 个工具",
+        "tool.inGlobal": "已在全局",
+        "tool.locked": "已在全局工作台，不能再放进普通工作台",
+        "tool.descriptionEmpty": "没有介绍。",
+        "source.builtin": "内置",
+        "source.mcp": "MCP · {server}",
+        "source.plugin": "插件 · {name}",
       },
       en: {
         "pill.none": "No workbench",
@@ -70,27 +86,41 @@ window.__ModuleLoader__.load({
         "nav": "Workbench",
         "title": "Workbench",
         "intro":
-          "Each conversation freezes its tools when the first message is sent. Every other installed tool is listed by name and one line of purpose in the system prompt; the model can ask for one, and you approve it for that turn. Edits apply to new conversations. A tool that belongs to the global workbench cannot be assigned to a regular one.",
+          "Each conversation freezes its tools when the first message is sent. Every other installed tool is listed by name and one line of purpose in the system prompt; the model can ask for one, and you approve it for that turn. Edits apply to new conversations.",
         "degraded":
           "The configuration file is damaged. Writes are stopped and tool masking is off: {error} (file: {file})",
         "loading": "Reading workbench configuration…",
-        "create.title": "New workbench",
-        "create.placeholder": "e.g. Office",
-        "create.submit": "Create",
-        "empty": "No workbenches yet. Create one, then tick the tools a conversation should carry.",
-        "bench.name": "Workbench name",
-        "bench.remove": "Delete",
-        "bench.confirmRemove": "Confirm",
-        "bench.summary": "Selected {count} tools. Installed tools outside every workbench are not sent by default.",
-        "bench.conflict": "Also in the global workbench, so it cannot be assigned here: {tools}",
-        "global.title": "Global workbench",
-        "global.desc": "These tools are always available and never change with the conversation. A tool cannot be both global and part of a workbench.",
-        "unclassified.title": "Unclassified",
-        "unclassified.count": "Installed but not in any workbench: {count}",
-        "unclassified.empty": "Every installed tool is assigned.",
-        "unclassified.toGlobal": "Put {name} into the global workbench",
-        "unclassified.hint": "Not sent by default. Click a tool to move it into the global workbench, or tick it in a workbench above.",
+        "board.title": "Workbenches",
+        "board.hint": "Click a card to edit that workbench; drag cards to reorder them.",
+        "board.add": "New",
+        "board.addTitle": "New workbench",
+        "board.editTitle": "Edit workbench",
+        "board.remove": "Delete workbench",
+        "board.confirmRemove": "Confirm",
+        "board.noDescription": "No description",
+        "board.selected": "Editing",
+        "global.title": "Global",
+        "global.desc": "These tools are always available and never change with the conversation.",
+        "form.name": "Name",
+        "form.namePlaceholder": "e.g. Office",
+        "form.description": "Description",
+        "form.descriptionPlaceholder": "One line about what this workbench is for",
+        "form.create": "Create",
+        "form.save": "Save",
+        "form.cancel": "Cancel",
+        "form.edit": "Edit",
+        "empty": "No workbenches yet. Use New on the right, then pick the tools a conversation should carry.",
+        "tools.title": "Tools",
+        "tools.hint": "Click a tool card to add or remove it from the workbench being edited; drag to reorder. Tools in the global workbench cannot be assigned to a regular one.",
+        "tools.hintGlobal": "Click a tool card to add or remove it from the global workbench.",
         "tools.empty": "No tools available.",
+        "tools.count": "{count} tools",
+        "tool.inGlobal": "Global",
+        "tool.locked": "In the global workbench, so it cannot join a regular one",
+        "tool.descriptionEmpty": "No description.",
+        "source.builtin": "Built-in",
+        "source.mcp": "MCP · {server}",
+        "source.plugin": "Plugin · {name}",
       },
     };
 
@@ -123,63 +153,131 @@ window.__ModuleLoader__.load({
 
     const CSS = `
 .dswb-pill{display:inline-flex;align-items:center;gap:6px;height:28px;max-width:220px;padding:0 8px;
-  border:none;border-radius:var(--dsw-radius-sm,8px);background:transparent;color:var(--dsw-alias-label-secondary,#8a8f98);
-  font-size:13px;font-weight:500;line-height:20px;cursor:pointer;outline:none;}
-.dswb-pill:hover{background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.12));}
-.dswb-pill[disabled]{color:var(--dsw-alias-label-dimmed,#6b7078);cursor:default;}
-.dswb-pill:focus-visible{box-shadow:0 0 0 2px var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary,#4c8dff));}
+  border:none;border-radius:var(--dsw-radius-sm,8px);background:transparent;color:var(--dsw-alias-label-secondary);
+  font-size:13px;font-weight:500;line-height:20px;cursor:pointer;outline:none;font-family:inherit;}
+.dswb-pill:hover{background:var(--dsw-alias-interactive-bg-hover);}
+.dswb-pill[disabled]{color:var(--dsw-alias-label-dimmed);cursor:default;}
+.dswb-pill:focus-visible{box-shadow:0 0 0 2px var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));}
 .dswb-pillLabel{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .dswb-chevron{flex:none;display:inline-flex;transition:transform .12s;}
 .dswb-chevron[data-open="true"]{transform:rotate(180deg);}
 .dswb-menu{position:absolute;z-index:40;bottom:calc(100% + 6px);left:0;min-width:220px;max-height:320px;overflow:auto;
-  padding:6px;border-radius:10px;border:1px solid var(--dsw-alias-border-subtle,rgba(127,127,127,.25));
-  background:var(--dsw-alias-bg-elevated,#fff);box-shadow:0 8px 28px rgba(0,0,0,.18);}
+  padding:6px;border-radius:var(--dsw-radius-md,12px);border:1px solid var(--dsw-alias-border-l2);
+  background:var(--dsw-menu-surface-fill,var(--dsw-alias-bg-layer-2));
+  -webkit-backdrop-filter:var(--dsw-menu-backdrop-filter,none);backdrop-filter:var(--dsw-menu-backdrop-filter,none);
+  box-shadow:var(--dsw-shadow-lv2,0 8px 28px rgba(0,0,0,.18));color:var(--dsw-alias-label-primary);}
 .dswb-menuItem{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:7px 9px;
-  border:none;border-radius:7px;background:transparent;color:var(--dsw-alias-label-primary,inherit);font-size:13px;
-  text-align:left;cursor:pointer;}
-.dswb-menuItem:hover{background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.12));}
-.dswb-menuItem[data-current="true"]{font-weight:600;}
-.dswb-menuItem[disabled]{color:var(--dsw-alias-label-dimmed,#6b7078);cursor:default;}
-.dswb-menuMeta{color:var(--dsw-alias-label-tertiary,#9aa0a8);font-size:12px;}
+  border:none;border-radius:var(--dsw-radius-xs,4px);background:transparent;color:inherit;font-size:13px;
+  font-family:inherit;text-align:left;cursor:pointer;}
+.dswb-menuItem:hover{background:var(--dsw-alias-interactive-bg-hover);}
+.dswb-menuItem[data-current="true"]{font-weight:600;color:var(--dsw-alias-label-primary);}
+.dswb-menuItem[disabled]{color:var(--dsw-alias-label-dimmed);cursor:default;}
+.dswb-menuMeta{color:var(--dsw-alias-label-tertiary);font-size:12px;}
 .dswb-tag{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:999px;
-  background:var(--dsw-alias-bg-secondary,rgba(127,127,127,.1));color:var(--dsw-alias-label-secondary,#8a8f98);
+  background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);
   font-size:12px;font-weight:500;white-space:nowrap;}
-.dswb-tag[data-frozen="true"]{color:var(--dsw-alias-state-success,#3ba55d);}
+.dswb-tag[data-frozen="true"]{color:var(--dsw-alias-state-success-primary);}
 .dswb-tagCount{opacity:.75;}
-.dswb-page{display:flex;flex-direction:column;gap:20px;padding:4px 2px 24px;max-width:760px;color:var(--dsw-alias-label-primary,inherit);}
+.dswb-page{display:flex;flex-direction:column;gap:18px;padding:4px 2px 28px;max-width:860px;color:var(--dsw-alias-label-primary);}
 .dswb-title{font-size:15px;font-weight:600;margin:0;}
-.dswb-desc{margin:0;color:var(--dsw-alias-label-tertiary,#9aa0a8);font-size:12.5px;line-height:1.55;}
-.dswb-banner{padding:9px 12px;border-radius:8px;font-size:12.5px;line-height:1.5;
-  background:var(--dsw-alias-state-warning-bg,rgba(232,163,61,.14));color:var(--dsw-alias-state-warning,#a9691a);}
-.dswb-card{border:1px solid var(--dsw-alias-border-subtle,rgba(127,127,127,.22));border-radius:10px;padding:12px 14px;
-  display:flex;flex-direction:column;gap:10px;}
-.dswb-cardHead{display:flex;align-items:center;gap:8px;}
-.dswb-input{flex:1;min-width:0;height:30px;padding:0 9px;font-size:13px;color:inherit;
-  border:1px solid var(--dsw-alias-border-subtle,rgba(127,127,127,.3));border-radius:7px;background:transparent;outline:none;}
-.dswb-input:focus{border-color:var(--dsw-alias-state-business-primary,#4c8dff);}
-.dswb-btn{height:30px;padding:0 12px;font-size:12.5px;border-radius:7px;cursor:pointer;
-  border:1px solid var(--dsw-alias-border-subtle,rgba(127,127,127,.3));background:transparent;color:inherit;}
-.dswb-btn:hover{background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.12));}
-.dswb-btn[data-danger="true"]{color:var(--dsw-alias-state-error,#d64545);}
+.dswb-sectionTitle{display:flex;align-items:baseline;gap:8px;margin:0;}
+.dswb-desc{margin:0;color:var(--dsw-alias-label-tertiary);font-size:12.5px;line-height:1.55;}
+.dswb-banner{padding:9px 12px;border-radius:var(--dsw-radius-sm,8px);font-size:12.5px;line-height:1.5;
+  background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-state-warn-primary);border:1px solid var(--dsw-alias-state-warn-primary);}
+.dswb-row{display:flex;align-items:stretch;gap:10px;min-width:0;}
+.dswb-boardScroll{display:flex;align-items:stretch;gap:10px;flex:1;min-width:0;overflow-x:auto;overflow-y:hidden;
+  padding:2px 2px 8px;scrollbar-width:thin;}
+.dswb-bench{position:relative;display:flex;flex-direction:column;gap:6px;flex:0 0 208px;min-height:96px;box-sizing:border-box;
+  padding:11px 12px;border-radius:var(--dsw-radius-md,12px);border:1px solid var(--dsw-alias-border-l2);
+  background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);cursor:pointer;outline:none;
+  text-align:left;font-family:inherit;transition:border-color .12s,background-color .12s;}
+.dswb-bench:hover{border-color:var(--dsw-alias-border-l3);}
+.dswb-bench[data-global="true"]{flex-basis:190px;background:var(--dsw-alias-bg-layer-1);}
+.dswb-bench[data-selected="true"]{border-color:var(--dsw-alias-state-business-primary);
+  background:var(--dsw-alias-bg-layer-3);}
+.dswb-bench[data-dragging="true"]{opacity:.5;}
+.dswb-bench[data-drop="true"]{box-shadow:inset 2px 0 0 var(--dsw-alias-state-business-primary);}
+.dswb-bench:focus-visible{box-shadow:0 0 0 2px var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));}
+.dswb-benchHead{display:flex;align-items:center;gap:6px;padding-right:44px;}
+.dswb-benchIcon{flex:none;display:inline-flex;color:var(--dsw-alias-label-secondary);}
+.dswb-benchName{font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dswb-benchDesc{font-size:12px;line-height:1.5;color:var(--dsw-alias-label-tertiary);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.dswb-benchFoot{margin-top:auto;display:flex;align-items:center;gap:6px;
+  font-size:11.5px;color:var(--dsw-alias-label-tertiary);}
+.dswb-benchState{color:var(--dsw-alias-state-business-primary);font-weight:500;}
+.dswb-benchActions{position:absolute;top:7px;right:7px;display:flex;align-items:center;gap:2px;}
+.dswb-iconBtn{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;padding:0;
+  border:none;border-radius:var(--dsw-radius-xs,4px);background:transparent;color:var(--dsw-alias-label-tertiary);
+  cursor:pointer;font-family:inherit;}
+.dswb-iconBtn:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary);}
+.dswb-iconBtn[data-danger="true"]:hover{color:var(--dsw-alias-state-error-primary);}
+.dswb-add{flex:0 0 108px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  padding:10px;border-radius:var(--dsw-radius-md,12px);border:1px dashed var(--dsw-alias-border-l3);
+  background:transparent;color:var(--dsw-alias-label-secondary);font-size:12.5px;font-family:inherit;cursor:pointer;}
+.dswb-add:hover{border-color:var(--dsw-alias-state-business-primary);color:var(--dsw-alias-label-primary);
+  background:var(--dsw-alias-interactive-bg-hover);}
+.dswb-add[disabled]{opacity:.5;cursor:default;}
+.dswb-toolsBox{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:var(--dsw-radius-md,12px);
+  border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-1);
+  max-height:440px;overflow-y:auto;scrollbar-width:thin;}
+.dswb-toolCard{display:flex;align-items:flex-start;gap:10px;padding:9px 11px;box-sizing:border-box;
+  border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-sm,8px);
+  background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);
+  cursor:pointer;font-family:inherit;text-align:left;width:100%;outline:none;transition:border-color .12s,opacity .12s;}
+.dswb-toolCard:hover{border-color:var(--dsw-alias-border-l3);background:var(--dsw-alias-bg-layer-3);}
+.dswb-toolCard[data-selected="true"]{border-color:var(--dsw-alias-state-business-primary);color:var(--dsw-alias-label-primary);}
+.dswb-toolCard[data-locked="true"]{opacity:.45;cursor:default;}
+.dswb-toolCard[data-dragging="true"]{opacity:.4;}
+.dswb-toolCard[data-drop="true"]{box-shadow:inset 0 2px 0 var(--dsw-alias-state-business-primary);}
+.dswb-toolCard:focus-visible{box-shadow:0 0 0 2px var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));}
+.dswb-grip{flex:none;display:inline-flex;align-items:center;padding-top:2px;color:var(--dsw-alias-label-dimmed);cursor:grab;}
+.dswb-toolMain{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1;}
+.dswb-toolName{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary);}
+.dswb-toolDesc{font-size:12px;line-height:1.5;color:var(--dsw-alias-label-tertiary);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.dswb-source{flex:none;display:inline-flex;align-items:center;height:18px;padding:0 7px;border-radius:999px;
+  background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-tertiary);
+  font-size:11px;font-weight:500;white-space:nowrap;border:1px solid var(--dsw-alias-border-l1);}
+.dswb-check{flex:none;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;
+  border-radius:50%;border:1px solid var(--dsw-alias-border-l3);color:transparent;}
+.dswb-toolCard[data-selected="true"] .dswb-check{border-color:var(--dsw-alias-state-business-primary);
+  background:var(--dsw-alias-state-business-primary);color:var(--dsw-alias-bg-base);}
+.dswb-overlay{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
+  background:var(--dsw-alias-bg-mask-2,rgba(0,0,0,.35));}
+.dswb-dialog{width:min(440px,calc(100vw - 48px));display:flex;flex-direction:column;gap:12px;padding:18px;
+  border-radius:var(--dsw-radius-lg,16px);border:1px solid var(--dsw-alias-border-l2);
+  background:var(--dsw-alias-bg-layer-1);box-shadow:var(--dsw-elevation-panel,0 16px 48px rgba(0,0,0,.24));}
+.dswb-field{display:flex;flex-direction:column;gap:5px;}
+.dswb-fieldLabel{font-size:12px;font-weight:600;color:var(--dsw-alias-label-secondary);}
+.dswb-input{height:32px;padding:0 10px;font-size:13px;color:var(--dsw-alias-label-primary);font-family:inherit;
+  border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-sm,8px);
+  background:var(--dsw-alias-bg-base);outline:none;}
+.dswb-input::placeholder{color:var(--dsw-alias-label-dimmed);}
+.dswb-input:focus{border-color:var(--dsw-alias-state-business-primary);}
+.dswb-textarea{min-height:64px;resize:vertical;padding:8px 10px;font-size:13px;line-height:1.5;
+  color:var(--dsw-alias-label-primary);font-family:inherit;border:1px solid var(--dsw-alias-border-l2);
+  border-radius:var(--dsw-radius-sm,8px);background:var(--dsw-alias-bg-base);outline:none;}
+.dswb-textarea:focus{border-color:var(--dsw-alias-state-business-primary);}
+.dswb-dialogFoot{display:flex;justify-content:flex-end;gap:8px;}
+.dswb-btn{height:30px;padding:0 12px;font-size:12.5px;font-family:inherit;border-radius:var(--dsw-radius-sm,8px);
+  cursor:pointer;border:1px solid var(--dsw-alias-border-l2);background:transparent;color:var(--dsw-alias-label-primary);}
+.dswb-btn:hover{background:var(--dsw-alias-interactive-bg-hover);}
+.dswb-btn[data-primary="true"]{border-color:var(--dsw-alias-state-business-primary);
+  background:var(--dsw-alias-state-business-primary);color:var(--dsw-alias-label-primary-inverted,#fff);}
 .dswb-btn[disabled]{opacity:.5;cursor:default;}
-.dswb-tools{display:flex;flex-wrap:wrap;gap:6px 14px;}
-.dswb-tool{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--dsw-alias-label-secondary,#8a8f98);
-  cursor:pointer;}
-.dswb-tool input{margin:0;accent-color:var(--dsw-alias-state-business-primary,#4c8dff);}
-.dswb-chip{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:999px;font-size:12px;
-  border:1px solid var(--dsw-alias-border-subtle,rgba(127,127,127,.3));background:transparent;
-  color:var(--dsw-alias-label-secondary,#8a8f98);cursor:pointer;}
-.dswb-chip:hover{background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.12));color:var(--dsw-alias-label-primary,inherit);}
-.dswb-chip[disabled]{opacity:.5;cursor:default;}
-.dswb-hint{font-size:12px;color:var(--dsw-alias-label-tertiary,#9aa0a8);}
-.dswb-error{font-size:12.5px;color:var(--dsw-alias-state-error,#d64545);}
-.dswb-empty{font-size:12.5px;color:var(--dsw-alias-label-tertiary,#9aa0a8);}
-.dswb-sep{height:1px;background:var(--dsw-alias-border-subtle,rgba(127,127,127,.18));margin:2px 0;}
+.dswb-hint{font-size:12px;color:var(--dsw-alias-label-tertiary);}
+.dswb-error{font-size:12.5px;color:var(--dsw-alias-state-error-primary);}
+.dswb-empty{font-size:12.5px;color:var(--dsw-alias-label-tertiary);}
 `;
 
     function ensureStyles() {
       if (typeof document === "undefined") return;
-      if (document.querySelector(`style[data-plugin-css="${NS}"]`) !== null) return;
+      const existing = document.querySelector(`style[data-plugin-css="${NS}"]`);
+      if (existing !== null) {
+        if (existing.textContent !== CSS) existing.textContent = CSS;
+        return;
+      }
       const tag = document.createElement("style");
       tag.dataset.plugin = NS;
       tag.dataset.pluginCss = NS;
@@ -210,8 +308,39 @@ window.__ModuleLoader__.load({
     }
 
     /* ------------------------------------------------------------------ */
-    /* small pieces                                                        */
+    /* icons                                                               */
     /* ------------------------------------------------------------------ */
+
+    function svg(size, children) {
+      return h(
+        "svg",
+        {
+          viewBox: "0 0 24 24",
+          width: size,
+          height: size,
+          fill: "none",
+          stroke: "currentColor",
+          strokeWidth: 1.5,
+          strokeLinecap: "round",
+          strokeLinejoin: "round",
+          "aria-hidden": true,
+        },
+        children,
+      );
+    }
+
+    /** Line-art Minecraft crafting table: studded top, 3x3 grid, tapered legs. */
+    const CraftingTable = ({ size = 16 }) =>
+      svg(size, [
+        h("path", { key: "top", d: "M3.2 5.4h17.6v7.4H3.2z" }),
+        h("path", { key: "v1", d: "M9.1 5.4v7.4" }),
+        h("path", { key: "v2", d: "M14.9 5.4v7.4" }),
+        h("path", { key: "h1", d: "M3.2 7.9h17.6" }),
+        h("path", { key: "h2", d: "M3.2 10.3h17.6" }),
+        h("path", { key: "leg1", d: "M5.6 12.8 4.4 18.6" }),
+        h("path", { key: "leg2", d: "M18.4 12.8 19.6 18.6" }),
+        h("path", { key: "rail", d: "M4.9 18.6h14.2" }),
+      ]);
 
     const Chevron = ({ open }) =>
       h(
@@ -241,6 +370,57 @@ window.__ModuleLoader__.load({
           h("path", { d: "M5.4 7V5.3a2.6 2.6 0 0 1 5.2 0V7", stroke: "currentColor", strokeWidth: 1.4 }),
         ),
       );
+
+    const Plus = ({ size = 18 }) => svg(size, [h("path", { key: "a", d: "M12 5v14" }), h("path", { key: "b", d: "M5 12h14" })]);
+
+    const Pencil = ({ size = 13 }) =>
+      svg(size, [
+        h("path", { key: "a", d: "M4 20h4l9.5-9.5a2.1 2.1 0 0 0-3-3L5 17v3z" }),
+        h("path", { key: "b", d: "M13.5 5.5 18 10" }),
+      ]);
+
+    const Trash = ({ size = 13 }) =>
+      svg(size, [
+        h("path", { key: "a", d: "M4 7h16" }),
+        h("path", { key: "b", d: "M9 7V5.2h6V7" }),
+        h("path", { key: "c", d: "M6.5 7 7.4 19h9.2L17.5 7" }),
+        h("path", { key: "d", d: "M10.5 10.5v5M13.5 10.5v5" }),
+      ]);
+
+    const Grip = () =>
+      h(
+        "span",
+        { className: "dswb-grip", "aria-hidden": true },
+        h(
+          "svg",
+          { viewBox: "0 0 10 16", width: 10, height: 16, fill: "currentColor", stroke: "none" },
+          [2, 5, 8, 11, 14].flatMap((y) => [
+            h("circle", { key: `l${y}`, cx: 3, cy: y - 3.2, r: 1 }),
+            h("circle", { key: `r${y}`, cx: 7, cy: y - 3.2, r: 1 }),
+          ]),
+        ),
+      );
+
+    const Check = () =>
+      h(
+        "span",
+        { className: "dswb-check", "aria-hidden": true },
+        h(
+          "svg",
+          { viewBox: "0 0 16 16", width: 11, height: 11, fill: "none" },
+          h("path", {
+            d: "M3.5 8.4 6.4 11.3 12.5 5",
+            stroke: "currentColor",
+            strokeWidth: 2,
+            strokeLinecap: "round",
+            strokeLinejoin: "round",
+          }),
+        ),
+      );
+
+    /* ------------------------------------------------------------------ */
+    /* hooks                                                               */
+    /* ------------------------------------------------------------------ */
 
     function useOutsideClose(ref, close, active) {
       useEffect(() => {
@@ -337,7 +517,7 @@ window.__ModuleLoader__.load({
               h("span", null, tr("pill.none")),
               h("span", { className: "dswb-menuMeta" }, tr("menu.coreOnly")),
             ),
-            h("div", { className: "dswb-sep" }),
+            h("div", { style: { height: 1, margin: "4px 2px", background: "var(--dsw-alias-border-l1)" } }),
             benches.length === 0
               ? h("div", { className: "dswb-empty", style: { padding: "7px 9px" } }, tr("menu.noBenches"))
               : benches.map((bench) =>
@@ -352,7 +532,7 @@ window.__ModuleLoader__.load({
                       disabled: frozen || pending,
                       onClick: () => pick(bench.id),
                     },
-                    h("span", null, bench.name),
+                    h("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, bench.name),
                     h("span", { className: "dswb-menuMeta" }, tr("menu.toolCount", { count: bench.tools.length })),
                   ),
                 ),
@@ -374,7 +554,7 @@ window.__ModuleLoader__.load({
             "aria-expanded": open ? "true" : "false",
             onClick: () => setOpen((value) => !value),
           },
-          frozen ? h(Lock) : null,
+          frozen ? h(Lock) : h(CraftingTable, { size: 14 }),
           h("span", { className: "dswb-pillLabel" }, label),
           h(Chevron, { open }),
         ),
@@ -406,7 +586,7 @@ window.__ModuleLoader__.load({
           "data-frozen": frozen ? "true" : "false",
           title: frozen ? tr("tag.frozenTitle", { name: label, count }) : tr("tag.plannedTitle", { name: label }),
         },
-        frozen ? h(Lock) : null,
+        frozen ? h(Lock) : h(CraftingTable, { size: 12 }),
         h("span", null, tr("tag.label", { name: label })),
         frozen ? h("span", { className: "dswb-tagCount" }, tr("tag.count", { count })) : null,
       );
@@ -420,91 +600,247 @@ window.__ModuleLoader__.load({
     /* settings page                                                       */
     /* ------------------------------------------------------------------ */
 
-    function ToolChecklist({ tools, selected, disabled, onToggle }) {
-      if (tools.length === 0) return h("div", { className: "dswb-empty" }, tr("tools.empty"));
+    /** Insert `moved` at the index of `target` inside `list` (a plain reorder). */
+    function reorder(list, moved, target) {
+      if (moved === target) return list;
+      const without = list.filter((item) => item !== moved);
+      const at = without.indexOf(target);
+      if (at === -1) return list;
+      return [...without.slice(0, at), moved, ...without.slice(at)];
+    }
+
+    function BenchDialog({ mode, initial, busy, onCancel, onSubmit }) {
+      const [name, setName] = useState(initial?.name ?? "");
+      const [description, setDescription] = useState(initial?.description ?? "");
+      const nameRef = useRef(null);
+      useEffect(() => {
+        nameRef.current?.focus();
+        nameRef.current?.select();
+      }, []);
+      useEffect(() => {
+        const onKey = (event) => {
+          if (event.key === "Escape") onCancel();
+        };
+        document.addEventListener("keydown", onKey, true);
+        return () => document.removeEventListener("keydown", onKey, true);
+      }, [onCancel]);
+      const submit = () => {
+        const trimmed = name.trim();
+        if (trimmed === "") return;
+        onSubmit({ name: trimmed, description: description.trim() });
+      };
       return h(
         "div",
-        { className: "dswb-tools" },
-        tools.map((tool) =>
+        { className: "dswb-overlay", role: "presentation", onMouseDown: (event) => event.stopPropagation() },
+        h(
+          "div",
+          { className: "dswb-dialog", role: "dialog", "aria-modal": "true" },
+          h("h2", { className: "dswb-title" }, mode === "edit" ? tr("board.editTitle") : tr("board.addTitle")),
           h(
             "label",
-            { key: tool.name, className: "dswb-tool", title: tool.description || tool.name },
+            { className: "dswb-field" },
+            h("span", { className: "dswb-fieldLabel" }, tr("form.name")),
             h("input", {
-              type: "checkbox",
-              checked: selected.includes(tool.name),
-              disabled,
-              onChange: () => onToggle(tool.name),
+              ref: nameRef,
+              className: "dswb-input",
+              value: name,
+              maxLength: 30,
+              placeholder: tr("form.namePlaceholder"),
+              disabled: busy,
+              onChange: (event) => setName(event.target.value),
+              onKeyDown: (event) => {
+                if (event.key === "Enter") submit();
+              },
             }),
-            h("span", null, tool.name),
+          ),
+          h(
+            "label",
+            { className: "dswb-field" },
+            h("span", { className: "dswb-fieldLabel" }, tr("form.description")),
+            h("textarea", {
+              className: "dswb-textarea",
+              value: description,
+              maxLength: 200,
+              placeholder: tr("form.descriptionPlaceholder"),
+              disabled: busy,
+              onChange: (event) => setDescription(event.target.value),
+            }),
+          ),
+          h(
+            "div",
+            { className: "dswb-dialogFoot" },
+            h("button", { type: "button", className: "dswb-btn", disabled: busy, onClick: onCancel }, tr("form.cancel")),
+            h(
+              "button",
+              {
+                type: "button",
+                className: "dswb-btn",
+                "data-primary": "true",
+                disabled: busy || name.trim() === "",
+                onClick: submit,
+              },
+              mode === "edit" ? tr("form.save") : tr("form.create"),
+            ),
           ),
         ),
       );
     }
 
-    function BenchCard({ bench, tools, config, disabled, onRename, onRemove, onTools }) {
-      const [name, setName] = useState(bench.name);
+    function BenchCard({ bench, global, selected, busy, dragging, onSelect, onEdit, onRemove, onDragStart, onDropIn }) {
       const [confirming, setConfirming] = useState(false);
-      useEffect(() => setName(bench.name), [bench.name]);
-      const conflicting = bench.tools.filter((name_) => config.global.includes(name_));
-      const commitName = () => {
-        const next = name.trim();
-        if (next === "" || next === bench.name) {
-          setName(bench.name);
-          return;
-        }
-        onRename(bench.id, next);
-      };
+      useEffect(() => {
+        if (!confirming) return undefined;
+        const timer = setTimeout(() => setConfirming(false), 4000);
+        return () => clearTimeout(timer);
+      }, [confirming]);
+      const title = global ? tr("global.title") : bench.name;
+      const description = global ? tr("global.desc") : bench.description || tr("board.noDescription");
       return h(
         "div",
-        { className: "dswb-card" },
-        h(
-          "div",
-          { className: "dswb-cardHead" },
-          h("input", {
-            className: "dswb-input",
-            value: name,
-            disabled,
-            "aria-label": tr("bench.name"),
-            onChange: (event) => setName(event.target.value),
-            onBlur: commitName,
-            onKeyDown: (event) => {
-              if (event.key === "Enter") event.currentTarget.blur();
-            },
-          }),
+        {
+          className: "dswb-bench",
+          role: "button",
+          tabIndex: 0,
+          "data-global": global ? "true" : "false",
+          "data-selected": selected ? "true" : "false",
+          "data-dragging": dragging ? "true" : "false",
+          draggable: global || busy ? "false" : "true",
+          "aria-pressed": selected ? "true" : "false",
+          title: global ? tr("global.desc") : description,
+          onClick: onSelect,
+          onKeyDown: (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              onSelect();
+            }
+          },
+          onDragStart: (event) => {
+            if (global || busy) return;
+            event.dataTransfer.effectAllowed = "move";
+            event.dataTransfer.setData("text/plain", bench.id);
+            onDragStart(bench.id);
+          },
+          onDragEnd: () => onDragStart(null),
+          onDragOver: (event) => {
+            if (global) return;
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "move";
+          },
+          onDrop: (event) => {
+            event.preventDefault();
+            onDropIn(bench.id);
+          },
+        },
+        global ? null : h("div", { className: "dswb-benchActions", onClick: (event) => event.stopPropagation() }, [
           h(
             "button",
             {
+              key: "edit",
               type: "button",
-              className: "dswb-btn",
+              className: "dswb-iconBtn",
+              title: tr("form.edit"),
+              "aria-label": tr("form.edit"),
+              disabled: busy,
+              onClick: onEdit,
+            },
+            h(Pencil),
+          ),
+          h(
+            "button",
+            {
+              key: "remove",
+              type: "button",
+              className: "dswb-iconBtn",
               "data-danger": confirming ? "true" : "false",
-              disabled,
+              title: tr("board.remove"),
+              "aria-label": confirming ? tr("board.confirmRemove") : tr("board.remove"),
+              disabled: busy,
               onClick: () => {
                 if (!confirming) {
                   setConfirming(true);
-                  setTimeout(() => setConfirming(false), 4000);
                   return;
                 }
-                onRemove(bench.id);
+                onRemove();
               },
             },
-            confirming ? tr("bench.confirmRemove") : tr("bench.remove"),
+            confirming ? h(Trash, { size: 14 }) : h(Trash),
           ),
+        ]),
+        h(
+          "div",
+          { className: "dswb-benchHead" },
+          h("span", { className: "dswb-benchIcon" }, h(CraftingTable, { size: 15 })),
+          h("span", { className: "dswb-benchName" }, title),
         ),
-        h("div", { className: "dswb-hint" }, tr("bench.summary", { count: bench.tools.length })),
-        h(ToolChecklist, {
-          tools,
-          selected: bench.tools,
-          disabled,
-          onToggle: (toolName) => {
-            const next = bench.tools.includes(toolName)
-              ? bench.tools.filter((item) => item !== toolName)
-              : [...bench.tools, toolName];
-            onTools(bench.id, next);
+        h("div", { className: "dswb-benchDesc" }, description),
+        h(
+          "div",
+          { className: "dswb-benchFoot" },
+          h("span", null, tr("tools.count", { count: bench.tools.length })),
+          selected ? h("span", { className: "dswb-benchState" }, tr("board.selected")) : null,
+        ),
+      );
+    }
+
+    function ToolCard({ tool, selected, locked, global, busy, dragging, onToggle, onDragStart, onDropOn }) {
+      const source =
+        tool.source?.kind === "mcp"
+          ? tr("source.mcp", { server: tool.source.label })
+          : tool.source?.kind === "builtin"
+            ? tr("source.builtin")
+            : tool.source?.label
+              ? tr("source.plugin", { name: tool.source.label })
+              : "";
+      return h(
+        "div",
+        {
+          className: "dswb-toolCard",
+          role: "button",
+          tabIndex: 0,
+          "data-selected": selected ? "true" : "false",
+          "data-locked": locked ? "true" : "false",
+          "data-dragging": dragging ? "true" : "false",
+          draggable: busy ? "false" : "true",
+          "aria-pressed": selected ? "true" : "false",
+          title: locked ? tr("tool.locked") : tool.description || tool.name,
+          onClick: () => {
+            if (!locked && !busy) onToggle();
           },
-        }),
-        conflicting.length > 0
-          ? h("div", { className: "dswb-error" }, tr("bench.conflict", { tools: conflicting.join(", ") }))
-          : null,
+          onKeyDown: (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              if (!locked && !busy) onToggle();
+            }
+          },
+          onDragStart: (event) => {
+            event.dataTransfer.effectAllowed = "move";
+            event.dataTransfer.setData("text/plain", tool.name);
+            onDragStart(tool.name);
+          },
+          onDragEnd: () => onDragStart(null),
+          onDragOver: (event) => {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "move";
+          },
+          onDrop: (event) => {
+            event.preventDefault();
+            onDropOn(tool.name);
+          },
+        },
+        h(Grip),
+        h(
+          "div",
+          { className: "dswb-toolMain" },
+          h(
+            "div",
+            { className: "dswb-toolName" },
+            h("span", { style: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, tool.name),
+            source === "" ? null : h("span", { className: "dswb-source" }, source),
+            locked ? h("span", { className: "dswb-source" }, tr("tool.inGlobal")) : null,
+          ),
+          h("div", { className: "dswb-toolDesc" }, tool.description || tr("tool.descriptionEmpty")),
+        ),
+        h(Check),
       );
     }
 
@@ -513,7 +849,10 @@ window.__ModuleLoader__.load({
       const [tools, setTools] = useState([]);
       const [error, setError] = useState(null);
       const [busy, setBusy] = useState(false);
-      const [draft, setDraft] = useState("");
+      const [dialog, setDialog] = useState(null);
+      const [selectedId, setSelectedId] = useState(null);
+      const [dragBench, setDragBench] = useState(null);
+      const [dragTool, setDragTool] = useState(null);
 
       const load = useCallback(() => {
         Promise.all([api("/state"), api("/tools")])
@@ -541,136 +880,206 @@ window.__ModuleLoader__.load({
           .finally(() => setBusy(false));
       }, []);
 
+      /* The global workbench is always first; a bench defaults to the last one used. */
+      const benches = config?.benches ?? [];
+      const selectedBench = selectedId === "global" ? null : (benches.find((bench) => bench.id === selectedId) ?? null);
+      const editingGlobal = selectedId === "global";
+      const activeId = editingGlobal ? "global" : (selectedBench?.id ?? null);
+
+      useEffect(() => {
+        if (config === null || activeId !== null) return;
+        const fallback = config.benches.find((bench) => bench.id === config.lastSelected) ?? config.benches[0];
+        setSelectedId(fallback === undefined ? "global" : fallback.id);
+      }, [activeId, config]);
+
+      const globalTools = useMemo(() => new Set(config?.global ?? []), [config]);
+      const orderedTools = useMemo(() => {
+        const order = config?.toolOrder ?? [];
+        const rank = new Map(order.map((name, index) => [name, index]));
+        return [...tools].sort((left, right) => {
+          const a = rank.has(left.name) ? rank.get(left.name) : Number.MAX_SAFE_INTEGER;
+          const b = rank.has(right.name) ? rank.get(right.name) : Number.MAX_SAFE_INTEGER;
+          if (a !== b) return a - b;
+          return left.name.localeCompare(right.name);
+        });
+      }, [config, tools]);
+
       if (config === null) {
         return h(
           "div",
           { className: "dswb-page" },
-          error !== null
-            ? h("div", { className: "dswb-error" }, error)
-            : h("div", { className: "dswb-hint" }, tr("loading")),
+          error !== null ? h("div", { className: "dswb-error" }, error) : h("div", { className: "dswb-hint" }, tr("loading")),
         );
       }
 
       const disabled = busy || config.readOnly;
-      const used = new Set(config.global);
-      for (const bench of config.benches) for (const name of bench.tools) used.add(name);
-      const unclassified = tools.map((tool) => tool.name).filter((name) => !used.has(name));
-      const descriptionOf = new Map(tools.map((tool) => [tool.name, tool.description]));
+      const selectedTools = editingGlobal ? config.global : (selectedBench?.tools ?? []);
+      const selectedSet = new Set(selectedTools);
+      /* Inside a regular workbench, a tool that lives in the global one is locked. */
+      const benchBlocksGlobal = selectedBench !== null;
+
+      const toggleTool = (name) => {
+        if (editingGlobal) {
+          const next = config.global.includes(name)
+            ? config.global.filter((item) => item !== name)
+            : [...config.global, name];
+          mutate("/global", { tools: next });
+          return;
+        }
+        if (selectedBench === null) return;
+        if (config.global.includes(name)) return;
+        const next = selectedBench.tools.includes(name)
+          ? selectedBench.tools.filter((item) => item !== name)
+          : [...selectedBench.tools, name];
+        mutate("/bench/tools", { id: selectedBench.id, tools: next });
+      };
+
+      const dropBench = (targetId) => {
+        const moved = dragBench;
+        setDragBench(null);
+        if (moved === null || moved === targetId) return;
+        const ids = reorder(benches.map((bench) => bench.id), moved, targetId);
+        if (ids.join("|") === benches.map((bench) => bench.id).join("|")) return;
+        mutate("/bench/reorder", { ids });
+      };
+
+      const dropTool = (targetName) => {
+        const moved = dragTool;
+        setDragTool(null);
+        if (moved === null || moved === targetName) return;
+        const names = reorder(orderedTools.map((tool) => tool.name), moved, targetName);
+        mutate("/tools/reorder", { names });
+      };
+
+      const openCreate = () => setDialog({ mode: "create" });
+      const closeDialog = () => setDialog(null);
+
+      const submitDialog = (values) => {
+        const target = dialog;
+        closeDialog();
+        if (target.mode === "edit" && target.bench !== undefined) {
+          mutate("/bench/update", { id: target.bench.id, name: values.name, description: values.description });
+          return;
+        }
+        setBusy(true);
+        api("/bench", values)
+          .then((state) => {
+            setConfig(state);
+            setError(null);
+            const created = state.benches[state.benches.length - 1];
+            if (created !== undefined) setSelectedId(created.id);
+          })
+          .catch((cause) => setError(cause.message))
+          .finally(() => setBusy(false));
+      };
 
       return h(
         "div",
         { className: "dswb-page" },
         h("h2", { className: "dswb-title" }, tr("title")),
         h("p", { className: "dswb-desc" }, tr("intro")),
-        config.degraded
-          ? h(
-              "div",
-              { className: "dswb-banner" },
-              tr("degraded", { error: config.error ?? "unknown", file: config.file }),
-            )
-          : null,
+        config.degraded ? h("div", { className: "dswb-banner" }, tr("degraded", { error: config.error ?? "unknown", file: config.file })) : null,
         error !== null ? h("div", { className: "dswb-error" }, error) : null,
         h(
-          "div",
-          { className: "dswb-card" },
-          h("div", { className: "dswb-cardHead" }, h("span", { className: "dswb-title" }, tr("create.title"))),
+          "section",
+          { style: { display: "flex", flexDirection: "column", gap: 6 } },
+          h("h3", { className: "dswb-sectionTitle dswb-title", style: { fontSize: 13 } }, tr("board.title")),
+          h("p", { className: "dswb-desc" }, tr("board.hint")),
           h(
             "div",
-            { className: "dswb-cardHead" },
-            h("input", {
-              className: "dswb-input",
-              placeholder: tr("create.placeholder"),
-              value: draft,
-              disabled,
-              onChange: (event) => setDraft(event.target.value),
-              onKeyDown: (event) => {
-                if (event.key !== "Enter") return;
-                const name = draft.trim();
-                if (name === "") return;
-                setDraft("");
-                mutate("/bench", { name });
-              },
-            }),
+            { className: "dswb-row" },
+            h(
+              "div",
+              { className: "dswb-boardScroll" },
+              h(BenchCard, {
+                key: "global",
+                bench: { id: "global", name: tr("global.title"), description: "", tools: config.global },
+                global: true,
+                selected: editingGlobal,
+                busy: disabled,
+                dragging: false,
+                onSelect: () => setSelectedId("global"),
+                onEdit: () => {},
+                onRemove: () => {},
+                onDragStart: () => {},
+                onDropIn: () => {},
+              }),
+              benches.length === 0
+                ? h("div", { className: "dswb-empty", style: { alignSelf: "center", padding: "0 6px" } }, tr("empty"))
+                : benches.map((bench) =>
+                    h(BenchCard, {
+                      key: bench.id,
+                      bench,
+                      global: false,
+                      selected: bench.id === selectedBench?.id,
+                      busy: disabled,
+                      dragging: dragBench === bench.id,
+                      onSelect: () => setSelectedId(bench.id),
+                      onEdit: () => setDialog({ mode: "edit", bench }),
+                      onRemove: () => {
+                        if (selectedBench?.id === bench.id) setSelectedId(null);
+                        mutate("/bench/remove", { id: bench.id });
+                      },
+                      onDragStart: setDragBench,
+                      onDropIn: dropBench,
+                    }),
+                  ),
+            ),
             h(
               "button",
-              {
-                type: "button",
-                className: "dswb-btn",
-                disabled: disabled || draft.trim() === "",
-                onClick: () => {
-                  const name = draft.trim();
-                  setDraft("");
-                  mutate("/bench", { name });
-                },
-              },
-              tr("create.submit"),
+              { type: "button", className: "dswb-add", disabled: disabled, onClick: openCreate },
+              h(Plus),
+              h("span", null, tr("board.add")),
             ),
           ),
         ),
-        config.benches.length === 0
-          ? h("div", { className: "dswb-empty" }, tr("empty"))
-          : config.benches.map((bench) =>
-              h(BenchCard, {
-                key: bench.id,
-                bench,
-                tools,
-                config,
-                disabled,
-                onRename: (id, name) => mutate("/bench/rename", { id, name }),
-                onRemove: (id) => mutate("/bench/remove", { id }),
-                onTools: (id, next) => mutate("/bench/tools", { id, tools: next }),
-              }),
+        h(
+          "section",
+          { style: { display: "flex", flexDirection: "column", gap: 6 } },
+          h(
+            "h3",
+            { className: "dswb-sectionTitle dswb-title", style: { fontSize: 13 } },
+            tr("tools.title"),
+            h(
+              "span",
+              { className: "dswb-hint" },
+              editingGlobal
+                ? tr("tools.hintGlobal")
+                : selectedBench === null
+                  ? ""
+                  : tr("tools.hint"),
             ),
-        h("div", { className: "dswb-sep" }),
-        h(
-          "div",
-          { className: "dswb-card" },
-          h("div", { className: "dswb-cardHead" }, h("span", { className: "dswb-title" }, tr("global.title"))),
-          h("p", { className: "dswb-desc" }, tr("global.desc")),
-          h(ToolChecklist, {
-            tools,
-            selected: config.global,
-            disabled,
-            onToggle: (name) => {
-              const next = config.global.includes(name)
-                ? config.global.filter((item) => item !== name)
-                : [...config.global, name];
-              mutate("/global", { tools: next });
-            },
-          }),
-        ),
-        h(
-          "div",
-          { className: "dswb-card" },
+          ),
           h(
             "div",
-            { className: "dswb-cardHead" },
-            h("span", { className: "dswb-title" }, tr("unclassified.title")),
-            h("span", { className: "dswb-hint" }, tr("unclassified.count", { count: unclassified.length })),
-          ),
-          unclassified.length === 0 ? null : h("p", { className: "dswb-desc" }, tr("unclassified.hint")),
-          unclassified.length === 0
-            ? h("div", { className: "dswb-empty" }, tr("unclassified.empty"))
-            : h(
-                "div",
-                { className: "dswb-tools" },
-                unclassified.map((name) =>
-                  h(
-                    "button",
-                    {
-                      key: name,
-                      type: "button",
-                      className: "dswb-chip",
-                      disabled,
-                      title: `${descriptionOf.get(name) ?? name}\n${tr("unclassified.toGlobal", { name })}`,
-                      "aria-label": tr("unclassified.toGlobal", { name }),
-                      onClick: () => mutate("/tools/move-to-global", { tools: [name] }),
-                    },
-                    name,
-                  ),
+            { className: "dswb-toolsBox" },
+            orderedTools.length === 0
+              ? h("div", { className: "dswb-empty" }, tr("tools.empty"))
+              : orderedTools.map((tool) =>
+                  h(ToolCard, {
+                    key: tool.name,
+                    tool,
+                    selected: selectedSet.has(tool.name),
+                    locked: benchBlocksGlobal && !editingGlobal && globalTools.has(tool.name),
+                    global: editingGlobal,
+                    busy: disabled || (selectedBench === null && !editingGlobal),
+                    dragging: dragTool === tool.name,
+                    onToggle: () => toggleTool(tool.name),
+                    onDragStart: setDragTool,
+                    onDropOn: dropTool,
+                  }),
                 ),
-              ),
+          ),
         ),
+        dialog === null
+          ? null
+          : h(BenchDialog, {
+              mode: dialog.mode,
+              initial: dialog.bench,
+              busy,
+              onCancel: closeDialog,
+              onSubmit: submitDialog,
+            }),
       );
     }
 

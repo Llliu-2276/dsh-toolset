@@ -5,9 +5,12 @@ import { dirname, join } from "node:path";
 /** Name length accepted for a workbench, in Unicode characters. */
 export const MAX_NAME_LENGTH = 30;
 
+/** Description length accepted for a workbench, in Unicode characters. */
+export const MAX_DESCRIPTION_LENGTH = 200;
+
 /** An empty, valid configuration. */
 export function defaultConfig() {
-  return { version: 1, lastSelected: null, global: { tools: [] }, benches: [] };
+  return { version: 1, lastSelected: null, global: { tools: [] }, benches: [], toolOrder: [] };
 }
 
 /**
@@ -81,8 +84,19 @@ export function normalizeConfig(raw) {
       else if (names.has(name)) errors.push(`工作台名称「${name}」重复`);
       names.add(name);
 
+      const description = typeof entry.description === "string" ? entry.description.trim() : "";
+      if (description.length > MAX_DESCRIPTION_LENGTH) {
+        errors.push(`工作台「${name}」的介绍超过 ${MAX_DESCRIPTION_LENGTH} 个字符`);
+      }
+
       const createdAt = Number.isFinite(entry.createdAt) ? entry.createdAt : 0;
-      benches.push({ id, name, tools: toolList(entry.tools, `benches[${index}].tools`, errors), createdAt });
+      benches.push({
+        id,
+        name,
+        description,
+        tools: toolList(entry.tools, `benches[${index}].tools`, errors),
+        createdAt,
+      });
     }
   }
 
@@ -99,9 +113,14 @@ export function normalizeConfig(raw) {
   }
   if (lastSelected !== null && !benches.some((bench) => bench.id === lastSelected)) lastSelected = null;
 
+  // Display order of the tool cards in the settings page, shared by every
+  // workbench so switching one never reshuffles the list. Tools that are not
+  // listed keep their alphabetical position after the listed ones.
+  const toolOrder = raw.toolOrder === undefined ? [] : toolList(raw.toolOrder, "toolOrder", errors);
+
   return {
     ok: errors.length === 0,
-    config: { version: 1, lastSelected, global: { tools: globalTools }, benches },
+    config: { version: 1, lastSelected, global: { tools: globalTools }, benches, toolOrder },
     errors,
   };
 }

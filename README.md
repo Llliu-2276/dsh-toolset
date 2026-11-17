@@ -1,4 +1,4 @@
-﻿# dsh-toolset
+# dsh-toolset
 
 为 DeepSeek Harness 增加「工作台」：每个对话在开始时选一组工具，之后每次请求只发送这组工具的完整定义；其余已安装工具只以「名字 + 一句话用途」的形式出现在系统提示里，需要时由模型申请、用户批准后临时放行。
 
@@ -37,14 +37,16 @@ dsh plugin --profile <profile> add <本仓库路径或包名>
   "version": 1,
   "lastSelected": "bm3k1a2",
   "global": { "tools": ["x_search"] },
+  "toolOrder": ["univer_sheet", "univer_doc", "x_search"],
   "benches": [
-    { "id": "bm3k1a1", "name": "办公", "tools": ["univer_sheet", "univer_doc"], "createdAt": 1763316000000 }
+    { "id": "bm3k1a1", "name": "办公", "description": "表格、文档与幻灯片", "tools": ["univer_sheet", "univer_doc"], "createdAt": 1763316000000 }
   ]
 }
 ```
 
 - 一个工具不能同时在全局工作台和普通工作台里；可以同时属于多个普通工作台。
-- 不在任何工作台里的已安装工具就是「未分类」，默认不发给任何对话。
+- 不在任何工作台里的已安装工具默认不发给任何对话，仍然可以被模型申请授权。
+- `description` 是工作台的一句话介绍（可空，上限 200 字）；`toolOrder` 是设置页里工具卡片的显示顺序，只影响 UI。
 - 写在会话第一条消息发出时冻结：之后改配置只影响新对话。
 - 文件损坏时插件不覆盖它，而是退化为「全部工具可用」并在日志里报警。
 
@@ -63,7 +65,7 @@ dsh plugin --profile <profile> add <本仓库路径或包名>
 
 - **输入框里的胶囊**：显示这个对话将使用的工作台（默认是上次选的那个）；点开可换，第一条消息发出后固定。选中「无工作台」就只发 CORE 工具。
 - **会话标题右侧的标签**：`工作台：办公 · 12 个工具`，冻结后变绿；工作台被删掉时显示「（已删除）」。
-- **设置 → 工作台**：新建、改名、删除工作台，给工作台勾选工具，管理全局工作台，以及把「未分类」工具一键放进全局。
+- **设置 → 工作台**：一行可横向滚动的工作台卡片（全局固定在最左，右侧固定一个「+」新建卡片），点卡片即选中、右上角铅笔改名称与介绍、垃圾桶四秒内点两次删除；下方是工具卡片列表，点一下加入/移出当前工作台，已在全局的工具置灰不可点；工作台与工具都能拖动排序。
 
 没有 UI 的环境（headless）用 `/workbench` 命令：不带参数列出现有工作台，`/workbench 办公` 选一个。
 
@@ -72,7 +74,7 @@ dsh plugin --profile <profile> add <本仓库路径或包名>
 仓库不引入构建步骤：host 是纯 ESM，`main` 直接指向 `src/index.js`；客户端 `client/client.js` 是手写浏览器模块（`window.__ModuleLoader__.load`）。
 
 ```powershell
-node --test            # 单元测试（30 个用例）
+node --test            # 单元测试（35 个用例）
 node scripts/e2e/run.mjs   # 端到端：真实 headless 会话 + mock 模型，断言请求体
 ```
 
@@ -95,4 +97,4 @@ docs/         design.md（设计）、plan.md（进度与实测）、DECISIONS.m
 
 ## 状态
 
-host 与客户端 UI 都已实现：host 通过 30 个单测与 15 项端到端断言，UI 在 web 端逐项点过（选工作台、冻结、新建/改名/删除、勾选工具、未分类移入全局），并已装进 desktop profile 对真实对话生效。尚未做的：真实账号下的缓存命中测量。详见 `docs/plan.md`。
+host 与客户端 UI 都已实现：host 通过 35 个单测与 15 项端到端断言；设置页重做为卡片式布局（工作台卡片行 + 工具卡片列表 + 拖动排序 + 新建/编辑弹窗），配色全部改用宿主 `--dsw-*` design token，浅色深色同一套样式。尚未做的：真实账号下的缓存命中测量、子代理端到端断言。详见 `docs/plan.md`。
