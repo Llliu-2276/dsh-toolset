@@ -36,11 +36,10 @@ window.__ModuleLoader__.load({
         "nav": "工作台",
         "title": "工作台",
         "intro":
-          "每个对话在第一条消息发出时冻结一组工具；其余已安装工具只以「名字 + 一句话用途」出现在系统提示里，需要时由模型申请、你批准后临时放行。修改只影响新对话。",
+          "对话开始时冻结一组工具；其余工具只在系统提示里留一句话用途，需要时由模型申请、你批准后本轮可用。改动只影响新对话。",
         "degraded": "配置文件损坏，已停止写入并暂时不做工具隔离：{error}（文件：{file}）",
         "loading": "正在读取工作台配置…",
-        "board.title": "工作台",
-        "board.hint": "点卡片切换当前编辑的工作台；拖动卡片可以调整顺序。",
+        "board.hint": "点卡片切换当前工作台 · 拖动卡片排序",
         "board.add": "新建",
         "board.addTitle": "新建工作台",
         "board.editTitle": "修改工作台",
@@ -60,8 +59,8 @@ window.__ModuleLoader__.load({
         "form.edit": "编辑",
         "empty": "还没有工作台。用右侧的「新建」加一个，再挑要发给对话的工具。",
         "tools.title": "工具",
-        "tools.hint": "点工具卡片加入或移出当前工作台；拖动可以调整顺序。全局工作台里的工具不可再分配到普通工作台。",
-        "tools.hintGlobal": "点工具卡片加入或移出全局工作台。",
+        "tools.hint": "点卡片加入或移出 · 拖动排序；灰色表示已在全局",
+        "tools.hintGlobal": "点卡片加入或移出全局工作台",
         "tools.empty": "没有可用的工具。",
         "tools.count": "{count} 个工具",
         "tool.inGlobal": "已在全局",
@@ -86,12 +85,11 @@ window.__ModuleLoader__.load({
         "nav": "Workbench",
         "title": "Workbench",
         "intro":
-          "Each conversation freezes its tools when the first message is sent. Every other installed tool is listed by name and one line of purpose in the system prompt; the model can ask for one, and you approve it for that turn. Edits apply to new conversations.",
+          "A conversation freezes its tool set on the first message. Other tools are listed in the system prompt as one line of purpose each; the model can request one and you approve it for that turn. Edits apply to new conversations.",
         "degraded":
           "The configuration file is damaged. Writes are stopped and tool masking is off: {error} (file: {file})",
         "loading": "Reading workbench configuration…",
-        "board.title": "Workbenches",
-        "board.hint": "Click a card to edit that workbench; drag cards to reorder them.",
+        "board.hint": "Click a card to edit it · drag cards to reorder",
         "board.add": "New",
         "board.addTitle": "New workbench",
         "board.editTitle": "Edit workbench",
@@ -111,8 +109,8 @@ window.__ModuleLoader__.load({
         "form.edit": "Edit",
         "empty": "No workbenches yet. Use New on the right, then pick the tools a conversation should carry.",
         "tools.title": "Tools",
-        "tools.hint": "Click a tool card to add or remove it from the workbench being edited; drag to reorder. Tools in the global workbench cannot be assigned to a regular one.",
-        "tools.hintGlobal": "Click a tool card to add or remove it from the global workbench.",
+        "tools.hint": "Click to add or remove · drag to reorder; greyed tools live in the global workbench",
+        "tools.hintGlobal": "Click a card to add or remove it from the global workbench",
         "tools.empty": "No tools available.",
         "tools.count": "{count} tools",
         "tool.inGlobal": "Global",
@@ -191,6 +189,8 @@ window.__ModuleLoader__.load({
 .dswb-page{height:100%;max-height:min(100%,calc(100dvh - 260px));}
 .dswb-title{font-size:15px;font-weight:600;margin:0;}
 .dswb-sectionTitle{display:flex;align-items:baseline;gap:8px;margin:0;}
+/* The label must never be squeezed into a two-line stack by the hint beside it. */
+.dswb-sectionTitleText{flex:none;white-space:nowrap;}
 .dswb-desc{margin:0;color:var(--dsw-alias-label-tertiary);font-size:12.5px;line-height:1.55;}
 .dswb-banner{padding:9px 12px;border-radius:var(--dsw-radius-sm,8px);font-size:12.5px;line-height:1.5;
   background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-state-warn-primary);border:1px solid var(--dsw-alias-state-warn-primary);}
@@ -222,9 +222,9 @@ window.__ModuleLoader__.load({
   cursor:pointer;font-family:inherit;}
 .dswb-iconBtn:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary);}
 .dswb-iconBtn[data-danger="true"]:hover{color:var(--dsw-alias-state-error-primary);}
-.dswb-add{flex:0 0 108px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
-  padding:10px;border-radius:var(--dsw-radius-md,12px);border:1px dashed var(--dsw-alias-border-l3);
-  background:transparent;color:var(--dsw-alias-label-secondary);font-size:12.5px;font-family:inherit;cursor:pointer;}
+.dswb-add{flex:0 0 76px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  padding:8px 6px;border-radius:var(--dsw-radius-md,12px);border:1px dashed var(--dsw-alias-border-l3);
+  background:transparent;color:var(--dsw-alias-label-secondary);font-size:12px;font-family:inherit;cursor:pointer;}
 .dswb-add:hover{border-color:var(--dsw-alias-state-business-primary);color:var(--dsw-alias-label-primary);
   background:var(--dsw-alias-interactive-bg-hover);}
 .dswb-add[disabled]{opacity:.5;cursor:default;}
@@ -277,7 +277,7 @@ window.__ModuleLoader__.load({
 .dswb-btn[data-primary="true"]{border-color:var(--dsw-alias-state-business-primary);
   background:var(--dsw-alias-state-business-primary);color:var(--dsw-alias-label-primary-inverted,#fff);}
 .dswb-btn[disabled]{opacity:.5;cursor:default;}
-.dswb-hint{font-size:12px;color:var(--dsw-alias-label-tertiary);}
+.dswb-hint{flex:1 1 auto;min-width:0;font-size:12px;color:var(--dsw-alias-label-tertiary);}
 .dswb-error{font-size:12.5px;color:var(--dsw-alias-state-error-primary);}
 .dswb-empty{font-size:12.5px;color:var(--dsw-alias-label-tertiary);}
 `;
@@ -1049,7 +1049,6 @@ window.__ModuleLoader__.load({
         h(
           "section",
           { className: "dswb-group dswb-groupBoard" },
-          h("h3", { className: "dswb-sectionTitle dswb-title", style: { fontSize: 13 } }, tr("board.title")),
           h("p", { className: "dswb-desc" }, tr("board.hint")),
           h(
             "div",
@@ -1105,7 +1104,7 @@ window.__ModuleLoader__.load({
           h(
             "h3",
             { className: "dswb-sectionTitle dswb-title", style: { fontSize: 13 } },
-            tr("tools.title"),
+            h("span", { className: "dswb-sectionTitleText" }, tr("tools.title")),
             h(
               "span",
               { className: "dswb-hint" },
