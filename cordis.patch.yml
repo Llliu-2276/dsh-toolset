@@ -1,0 +1,9 @@
+# Bundle layer for dsh-toolset.
+#
+# Profiles that list `dsh-toolset` in `dsh.profile.bundles` apply this patch,
+# which inserts the plugin row. A profile's own cordis.patch.yml stays the
+# user-owned override layer above it.
+- insert:
+    - id: dsh-toolset
+      name: 'dsh-toolset'
+      config: {}
